@@ -1438,10 +1438,12 @@
       <div class="card">
         <div class="card-header">
           <div class="card-icon">📋</div>
-          <div>
+          <div style="flex:1;">
             <div class="card-title">收支明细</div>
             <div class="card-subtitle" id="finRecordCount">共 0 条记录</div>
           </div>
+          <select id="finMonthFilter" onchange="renderFinances()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fff;color:var(--text);font-weight:600;">
+          </select>
         </div>
         <div id="finList"></div>
         <div class="empty-state" id="finEmpty" style="display:none;">
@@ -2539,39 +2541,72 @@ function deleteFinance(i) {
   renderFinances();
 }
 
+// 获取所有有记录的月份（用于筛选器）
+function getAvailableMonths(arr) {
+  const set = new Set();
+  const now = new Date();
+  // 默认加入本月
+  set.add(now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0'));
+  arr.forEach(item => {
+    const d = new Date(item.date);
+    set.add(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'));
+  });
+  // 排序，最近的在前
+  return Array.from(set).sort((a, b) => b.localeCompare(a)).map(v => {
+    const [y, m] = v.split('-');
+    return { value: v, label: y + '年' + parseInt(m) + '月' };
+  });
+}
+
 function renderFinances() {
   const arr = loadFinances();
   const list = $('#finList');
   const empty = $('#finEmpty');
   list.innerHTML = '';
 
-  if (arr.length === 0) {
+  // 初始化月份选择器
+  const monthSelect = $('#finMonthFilter');
+  const months = getAvailableMonths(arr);
+  const currentVal = monthSelect.value;
+  monthSelect.innerHTML = months.map(m => '<option value="' + m.value + '">' + m.label + '</option>').join('');
+  // 恢复选中值，默认本月
+  if (currentVal && months.some(m => m.value === currentVal)) {
+    monthSelect.value = currentVal;
+  } else {
+    const now = new Date();
+    monthSelect.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  }
+
+  // 筛选选中月份
+  const selMonth = monthSelect.value;
+  const [selYear, selMonthNum] = selMonth.split('-').map(Number);
+  const filtered = arr.filter(item => {
+    const d = new Date(item.date);
+    return d.getFullYear() === selYear && (d.getMonth()+1) === selMonthNum;
+  });
+
+  if (filtered.length === 0) {
     empty.style.display = 'block';
+    empty.querySelector('p').textContent = '该月份暂无记录';
   } else {
     empty.style.display = 'none';
   }
 
-  // 统计本月
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  // 统计选中月份
   let income = 0, expense = 0;
-
-  arr.forEach((item, i) => {
-    const d = new Date(item.date);
-    if (d.getFullYear() === year && d.getMonth() === month) {
-      if (item.type === 'income') income += parseFloat(item.amount);
-      else expense += parseFloat(item.amount);
-    }
+  filtered.forEach(item => {
+    if (item.type === 'income') income += parseFloat(item.amount);
+    else expense += parseFloat(item.amount);
   });
 
   $('#finIncome').textContent = '¥' + income.toFixed(2);
   $('#finExpense').textContent = '¥' + expense.toFixed(2);
   $('#finBalance').textContent = '¥' + (income - expense).toFixed(2);
-  $('#finRecordCount').textContent = '共 ' + arr.length + ' 条记录';
+  $('#finRecordCount').textContent = filtered.length + ' 条记录';
 
-  // 渲染列表
-  arr.forEach((item, i) => {
+  // 渲染列表（用原始数组的 index 方便删除）
+  filtered.forEach(item => {
+    const originalIndex = arr.indexOf(item);
     const d = new Date(item.date);
     const dateStr = (d.getMonth()+1) + '月' + d.getDate() + '日 ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
     const isIncome = item.type === 'income';
@@ -2588,7 +2623,7 @@ function renderFinances() {
       <div style="font-size:16px;font-weight:700;color:${isIncome ? '#2e7d32' : '#c62828'};flex-shrink:0;">
         ${isIncome ? '+' : '-'}¥${item.amount}
       </div>
-      <button class="task-delete" onclick="deleteFinance(${i})" style="opacity:1;">✕</button>
+      <button class="task-delete" onclick="deleteFinance(${originalIndex})" style="opacity:1;">✕</button>
     `;
     list.appendChild(div);
   });
