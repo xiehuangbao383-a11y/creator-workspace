@@ -510,7 +510,7 @@
     font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
   }
   .guide-section {
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     padding-left: 12px;
     border-left: 3px solid var(--primary-light);
   }
@@ -522,6 +522,80 @@
   }
   .guide-section ul { padding-left: 16px; }
   .guide-section li { margin-bottom: 4px; }
+
+  /* 概览卡片 */
+  .overview-card {
+    background: linear-gradient(135deg, #e8f5e9, #f0f9f4);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  .overview-item {
+    text-align: center;
+  }
+  .overview-item .ov-icon { font-size: 20px; margin-bottom: 4px; }
+  .overview-item .ov-label { font-size: 11px; color: var(--text-light); }
+  .overview-item .ov-value { font-size: 14px; font-weight: 700; color: var(--primary-dark); }
+
+  /* 风格 Tabs */
+  .style-tabs {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .style-tab {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 12px; font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .style-tab:hover { border-color: var(--primary-light); }
+  .style-tab.active {
+    background: var(--primary); color: #fff; border-color: var(--primary);
+  }
+
+  /* 预算表 */
+  .budget-table {
+    width: 100%; border-collapse: collapse; margin-top: 8px;
+  }
+  .budget-table th, .budget-table td {
+    padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .budget-table th { color: var(--text-light); font-weight: 600; }
+  .budget-table .total td { font-weight: 700; color: var(--primary-dark); }
+
+  /* 提示卡片 */
+  .prompt-card {
+    background: linear-gradient(135deg, #fff8e1, #fffde7);
+    border: 1px solid #ffe082;
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-top: 16px;
+    display: none;
+  }
+  .prompt-card.show { display: block; }
+  .prompt-card h4 { font-size: 14px; margin-bottom: 10px; color: #b8860b; }
+  .prompt-card .prompt-text {
+    background: #fff; border-radius: 10px; padding: 12px;
+    font-size: 14px; color: var(--text); line-height: 1.6;
+    border: 1px dashed #ffe082;
+    margin-bottom: 10px;
+  }
+  .prompt-card .copy-btn {
+    background: #f7b955; color: #fff; border: none;
+    padding: 8px 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .prompt-card .copy-btn:hover { background: #e6a83e; }
+  .prompt-card .hint-text { font-size: 12px; color: var(--text-light); margin-top: 8px; }
 
   /* ===== 随笔记录 ===== */
   .note-list {
@@ -801,7 +875,15 @@
           </div>
         </div>
       </div>
-      <button class="btn-action" style="margin-top:20px;width:100%;justify-content:center;" onclick="submitTravelPlan()">📝 提交规划请求</button>
+      <button class="btn-action" style="margin-top:20px;width:100%;justify-content:center;" onclick="submitTravelPlan()">🚀 提交规划请求</button>
+    </div>
+
+    <!-- 金色提示卡 -->
+    <div class="prompt-card" id="promptCard">
+      <h4>✨ 把下面这句话发给我，我帮你全网搜索生成攻略</h4>
+      <div class="prompt-text" id="promptText"></div>
+      <button class="copy-btn" onclick="copyPrompt()">📋 复制这句话</button>
+      <p class="hint-text">复制后粘贴到对话框发给我，我会搜索真实信息并生成完整攻略注入你的工作台</p>
     </div>
 
     <div id="travelResult"></div>
@@ -1110,8 +1192,7 @@ function generateTravelGuide(data) {
 
 function submitTravelPlan() {
   const destination = $('#t_dest').value.trim();
-  const start = $('#t_start').value;
-  const end = $('#t_end'.replace('"',''));
+  const start = document.getElementById('t_start').value;
   const endVal = document.getElementById('t_end').value;
   const people = $('#t_people').value.trim();
   const budget = $('#t_budget').value.trim();
@@ -1129,13 +1210,26 @@ function submitTravelPlan() {
     if (diff > 0) days = diff + '天';
   }
 
-  // 显示加载中
+  let dateRange = '';
+  if (start && endVal) {
+    const d1 = new Date(start), d2 = new Date(endVal);
+    dateRange = `${d1.getMonth()+1}.${d1.getDate()}-${d2.getMonth()+1}.${d2.getDate()}`;
+  }
+
+  // 生成提示语
+  const styleText = styles.length ? `（${styles.join('/')}风格）` : '';
+  const promptMsg = `帮我规划「${destination}」${dateRange}旅行攻略${styleText}${people ? '，' + people : ''}${budget ? '，预算' + budget : ''}`;
+
+  // 显示金色提示卡
+  $('#promptText').textContent = promptMsg;
+  $('#promptCard').classList.add('show');
+
+  // 尝试调用 AI API
   const submitBtn = document.querySelector('button[onclick="submitTravelPlan()"]');
   const originalText = submitBtn.innerHTML;
   submitBtn.innerHTML = '⏳ AI 正在生成攻略...';
   submitBtn.disabled = true;
 
-  // 调用 AI API 生成真实攻略
   fetch('https://travel-guide.xiehuangbao383.workers.dev/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1144,41 +1238,69 @@ function submitTravelPlan() {
   .then(resp => resp.json())
   .then(data => {
     if (data.error) {
-      alert('生成失败：' + data.error);
-      return;
+      console.log('AI error:', data.error);
+      return null;
     }
-
-    const guide = { raw: data.guide.raw };
-    const travelItem = {
-      destination, start, end: endVal, people, budget, styles, days, guide,
-      date: todayFull().split(' ')[0]
-    };
-
-    const arr = loadTravels();
-    arr.unshift(travelItem);
-    saveTravels(arr);
-
-    // 清空表单
-    $('#t_dest').value = '';
-    document.getElementById('t_start').value = '';
-    document.getElementById('t_end').value = '';
-    $('#t_people').value = '';
-    $('#t_budget').value = '';
-    document.querySelectorAll('#travelStyles .style-card').forEach(el => el.classList.remove('selected'));
-
-    renderTravels();
-    setTimeout(() => {
-      const first = $('#travelList .travel-card');
-      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+    return data.guide.raw;
+  })
+  .then(guideText => {
+    if (guideText) {
+      const travelItem = {
+        destination, start, end: endVal, people, budget, styles, days, dateRange,
+        guide: { raw: guideText, type: 'ai' },
+        date: todayFull().split(' ')[0]
+      };
+      const arr = loadTravels();
+      arr.unshift(travelItem);
+      saveTravels(arr);
+      clearTravelForm();
+      renderTravels();
+      $('#promptCard').classList.remove('show');
+      setTimeout(() => {
+        const first = $('#travelList .travel-card');
+        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    } else {
+      $('#promptCard').classList.add('show');
+    }
   })
   .catch(err => {
-    alert('网络错误，请重试：' + err.message);
+    console.log('Network error:', err);
+    $('#promptCard').classList.add('show');
   })
   .finally(() => {
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
   });
+}
+
+function copyPrompt() {
+  const text = $('#promptText').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      const orig = btn.textContent;
+      btn.textContent = '✅ 已复制';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('已复制');
+  }
+}
+
+function clearTravelForm() {
+  $('#t_dest').value = '';
+  document.getElementById('t_start').value = '';
+  document.getElementById('t_end').value = '';
+  $('#t_people').value = '';
+  $('#t_budget').value = '';
+  document.querySelectorAll('#travelStyles .style-card').forEach(el => el.classList.remove('selected'));
 }
 
 function renderTravels() {
@@ -1192,18 +1314,20 @@ function renderTravels() {
   arr.forEach((item, i) => {
     const card = document.createElement('div');
     card.className = 'travel-card';
+    const guideContent = item.guide.raw;
     card.innerHTML = `
       <button class="card-delete" onclick="deleteTravel(${i})">✕</button>
       <div class="destination">📍 ${escapeHtml(item.destination)}</div>
       <div class="meta-line">
         ${item.days ? `<span>⏱ ${escapeHtml(item.days)}</span>` : ''}
-        ${item.start ? `<span>📅 ${escapeHtml(item.start)}${item.end ? ' ~ ' + escapeHtml(item.end) : ''}</span>` : ''}
+        ${item.dateRange ? `<span>📅 ${escapeHtml(item.dateRange)}</span>` : ''}
         ${item.people ? `<span>👥 ${escapeHtml(item.people)}</span>` : ''}
         ${item.budget ? `<span>💰 ${escapeHtml(item.budget)}</span>` : ''}
       </div>
-      <div class="styles">${(item.styles || []).map(s => `<span class="style-tag">${escapeHtml(s)}</span>`).join('')}</div>
+      ${item.styles && item.styles.length ? `<div class="styles">${item.styles.map(s => `<span class="style-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+      ${item.guide.type === 'ai' ? '<div style="font-size:11px;color:var(--primary-dark);background:var(--primary-soft);display:inline-block;padding:2px 8px;border-radius:10px;margin-bottom:8px;">✨ AI生成</div>' : ''}
       <div class="guide-preview" id="guide-${i}">
-        <div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:var(--text);">${escapeHtml(item.guide.raw)}</div>
+        <div style="white-space:pre-wrap;font-size:13px;line-height:1.8;color:var(--text);">${escapeHtml(guideContent)}</div>
       </div>
       <span class="expand-btn" onclick="toggleGuide(${i})">展开完整攻略</span>
     `;
