@@ -978,20 +978,6 @@
     <div class="nav-item active" data-page="plan">
       <div class="nav-icon">📋</div><span>每日工作计划</span>
     </div>
-    <div class="nav-item" data-page="idea">
-      <div class="nav-icon">💡</div><span>工作选题灵感</span>
-    </div>
-    <div class="nav-item" data-page="review">
-      <div class="nav-icon">📊</div><span>内容复盘</span>
-    </div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-title">自媒体板块</div>
-    <div class="nav-item" data-page="video">
-      <div class="nav-icon">🔥</div><span>爆款热点视频/二创</span>
-      <span class="nav-badge">HOT</span>
-    </div>
   </div>
 
   <div class="nav-section">
@@ -1001,9 +987,6 @@
     </div>
     <div class="nav-item" data-page="food">
       <div class="nav-icon">🍜</div><span>美食推荐</span>
-    </div>
-    <div class="nav-item" data-page="notes">
-      <div class="nav-icon">📝</div><span>随笔记录</span>
     </div>
   </div>
 
@@ -1358,9 +1341,8 @@ function switchPage(page) {
 
   // 更新顶部栏标题
   const titles = {
-    plan: '📋 每日计划', idea: '💡 选题灵感', review: '📊 内容复盘',
-    video: '🔥 爆款热点', travel: '✈️ 旅行规划', food: '🍜 美食推荐',
-    notes: '📝 随笔记录', profile: '👤 个人信息', favorites: '⭐ 我的收藏'
+    plan: '📋 每日计划', travel: '✈️ 旅行规划', food: '🍜 美食推荐',
+    profile: '👤 个人信息', favorites: '⭐ 我的收藏'
   };
   if ($('#topbarTitle')) $('#topbarTitle').textContent = titles[page] || '我的工作台';
 }
