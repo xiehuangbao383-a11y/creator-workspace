@@ -1631,13 +1631,36 @@ function checkReminders() {
 function showReminder(taskIndex, task) {
   currentRemindTask = taskIndex;
   const remindText = formatRemind(task.remindDate, task.remindTime);
-  $('#remindTitle').textContent = '⏰ ' + task.name;
-  $('#remindDesc').innerHTML = '提醒时间：' + escapeHtml(remindText) + (task.time ? '<br>备注：' + escapeHtml(task.time) : '');
-  $('#remindPopup').classList.add('show');
-  $('#remindOverlay').classList.add('show');
-  // 振动
+
+  // 1. 浏览器通知（消息栏提醒）
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      const notif = new Notification('⏰ 任务提醒：' + task.name, {
+        body: '提醒时间：' + remindText + (task.time ? '\n备注：' + task.time : ''),
+        icon: 'icon-192.png',
+        tag: 'task-' + taskIndex,
+        requireInteraction: true
+      });
+      notif.onclick = function() {
+        window.focus();
+        switchPage('plan');
+        this.close();
+      };
+    } catch(e) { console.log('Notification error:', e); }
+  }
+
+  // 2. 页面内弹窗（前台时）
+  if (document.visibilityState === 'visible') {
+    $('#remindTitle').textContent = '⏰ ' + task.name;
+    $('#remindDesc').innerHTML = '提醒时间：' + escapeHtml(remindText) + (task.time ? '<br>备注：' + escapeHtml(task.time) : '');
+    $('#remindPopup').classList.add('show');
+    $('#remindOverlay').classList.add('show');
+  }
+
+  // 3. 振动
   if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
-  // 声音提示（用 AudioContext 生成短音）
+
+  // 4. 声音提示
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     [0, 0.3, 0.6].forEach(delay => {
@@ -1652,6 +1675,21 @@ function showReminder(taskIndex, task) {
       osc.stop(ctx.currentTime + delay + 0.3);
     });
   } catch(e) {}
+}
+
+// 请求通知权限
+function requestNotifyPermission() {
+  if ('Notification' in window) {
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then(function(result) {
+        if (result === 'granted') {
+          console.log('通知权限已开启');
+        } else {
+          console.log('通知权限被拒绝');
+        }
+      });
+    }
+  }
 }
 
 function snoozeReminder() {
@@ -1683,8 +1721,8 @@ function completeReminder() {
   currentRemindTask = null;
 }
 
-// 每 30 秒检查一次提醒
-setInterval(checkReminders, 30000);
+// 每 10 秒检查一次提醒
+setInterval(checkReminders, 10000);
 // 页面加载后 3 秒检查一次
 setTimeout(checkReminders, 3000);
 
@@ -2792,6 +2830,9 @@ renderFoods();
 
 renderTravels();
 initProfile();
+
+// 请求通知权限（首次访问时浏览器会弹窗询问）
+requestNotifyPermission();
 
 // 调试：确认所有页面存在
 console.log('页面初始化完成，已注册页面:', 
