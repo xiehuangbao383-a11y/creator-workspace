@@ -497,6 +497,26 @@
     margin-top: 6px; display: inline-block;
   }
 
+  /* 旅行卡片底部操作栏 */
+  .travel-actions {
+    display: flex; gap: 10px; margin-top: 14px;
+    padding-top: 14px; border-top: 1px solid var(--border);
+  }
+  .travel-actions button {
+    flex: 1; padding: 9px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .travel-actions .btn-fav:hover { border-color: var(--warning); background: #fff8e1; color: #b8860b; }
+  .travel-actions .btn-fav.favorited { background: #fff3cd; border-color: var(--warning); color: #b8860b; }
+  .travel-actions .btn-del:hover { border-color: var(--danger); background: #fff0f0; color: var(--danger); }
+  .travel-actions .btn-share:hover { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-dark); }
+
   /* ===== 旅行攻略结果 ===== */
   .guide-result {
     background: var(--card);
@@ -1318,9 +1338,11 @@ function renderTravels() {
   arr.forEach((item, i) => {
     const card = document.createElement('div');
     card.className = 'travel-card';
+    if (item.favorited) card.style.borderLeftColor = '#f7b955';
     const guideContent = item.guide.raw;
     card.innerHTML = `
       <button class="card-delete" onclick="deleteTravel(${i})">✕</button>
+      ${item.favorited ? '<div style="font-size:11px;color:#b8860b;background:#fff8e1;display:inline-block;padding:2px 8px;border-radius:10px;margin-bottom:6px;">⭐ 已收藏</div>' : ''}
       <div class="destination">📍 ${escapeHtml(item.origin ? item.origin + ' → ' : '')}${escapeHtml(item.destination)}</div>
       <div class="meta-line">
         ${item.days ? `<span>⏱ ${escapeHtml(item.days)}</span>` : ''}
@@ -1334,6 +1356,13 @@ function renderTravels() {
         <div style="white-space:pre-wrap;font-size:13px;line-height:1.8;color:var(--text);">${escapeHtml(guideContent)}</div>
       </div>
       <span class="expand-btn" onclick="toggleGuide(${i})">展开完整攻略</span>
+      <div class="travel-actions">
+        <button class="btn-fav ${item.favorited ? 'favorited' : ''}" onclick="toggleFavTravel(${i})">
+          ${item.favorited ? '⭐ 取消收藏' : '☆ 收藏'}
+        </button>
+        <button class="btn-share" onclick="shareTravel(${i})">📤 分享</button>
+        <button class="btn-del" onclick="deleteTravel(${i})">🗑 删除</button>
+      </div>
     `;
     list.appendChild(card);
   });
@@ -1348,6 +1377,33 @@ function toggleGuide(i) {
 
 function deleteTravel(i) {
   const arr = loadTravels(); arr.splice(i,1); saveTravels(arr); renderTravels();
+}
+
+function toggleFavTravel(i) {
+  const arr = loadTravels();
+  arr[i].favorited = !arr[i].favorited;
+  saveTravels(arr);
+  renderTravels();
+}
+
+function shareTravel(i) {
+  const arr = loadTravels();
+  const item = arr[i];
+  let text = `✈️ ${item.origin ? item.origin + ' → ' : ''}${item.destination}\n`;
+  if (item.dateRange) text += `📅 ${item.dateRange}\n`;
+  if (item.days) text += `⏱ ${item.days}\n`;
+  if (item.people) text += `👥 ${item.people}\n`;
+  text += `\n${item.guide.raw}`;
+
+  if (navigator.share) {
+    navigator.share({ title: `${item.destination}旅行攻略`, text: text });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('攻略已复制到剪贴板，可粘贴分享给好友');
+    });
+  } else {
+    alert('请手动复制攻略内容');
+  }
 }
 
 // ===== 模态框 =====
