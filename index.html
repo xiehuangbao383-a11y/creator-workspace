@@ -322,17 +322,21 @@
   }
 
   .task-item {
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: flex-start; gap: 12px;
     padding: 12px 14px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     margin-bottom: 8px;
     transition: all .2s;
     background: #fafdfb;
+    flex-wrap: wrap;
   }
   .task-item:hover { border-color: var(--border-strong); background: #f5f9f7; }
   .task-item.done { background: var(--primary-soft); border-color: var(--primary-light); }
   .task-item.done .task-name { text-decoration: line-through; color: var(--text-light); }
+  .task-item.overdue { border-color: #ffcccc; background: #fff5f5; }
+  .task-item.remind-due { border-color: var(--warning); background: #fffbeb; animation: pulse-border 1s infinite; }
+  @keyframes pulse-border { 0%,100%{border-color:var(--warning);} 50%{border-color:#f0a800;} }
 
   .checkbox {
     width: 22px; height: 22px;
@@ -343,6 +347,7 @@
     flex-shrink: 0;
     transition: all .2s;
     background: #fff;
+    margin-top: 1px;
   }
   .checkbox.checked {
     background: var(--success);
@@ -351,8 +356,20 @@
   }
   .checkbox.checked::after { content: "✓"; font-size: 13px; font-weight: 700; }
 
-  .task-name { flex: 1; font-size: 14px; color: var(--text); }
-  .task-time {
+  .task-content { flex: 1; min-width: 0; }
+  .task-name { font-size: 14px; color: var(--text); display: block; }
+  .task-meta-row {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; align-items: center;
+  }
+  .task-tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    font-weight: 600; display: inline-flex; align-items: center; gap: 3px;
+  }
+  .task-tag.remind { background: #e3f2fd; color: #1565c0; }
+  .task-tag.overdue { background: #ffebee; color: #c62828; }
+  .task-tag.done-tag { background: var(--primary-soft); color: var(--primary-dark); }
+  .task-tag.urgent { background: #fff3cd; color: #856404; }
+  .task-time-old {
     font-size: 11px; color: var(--primary-dark);
     background: var(--primary-soft);
     padding: 3px 10px; border-radius: 20px;
@@ -364,15 +381,18 @@
     cursor: pointer; border-radius: 6px;
     font-size: 14px;
     opacity: 0; transition: all .2s;
+    flex-shrink: 0;
   }
   .task-item:hover .task-delete { opacity: 1; }
   .task-delete:hover { background: #ffeaea; color: #ff6b6b; }
 
+  /* 添加任务区域 */
   .add-task-row {
-    display: flex; gap: 8px; margin-top: 12px;
+    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
   }
   .add-task-row input {
-    flex: 1; padding: 10px 14px;
+    flex: 1; min-width: 120px;
+    padding: 10px 14px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm); font-size: 14px;
     outline: none; transition: all .2s;
@@ -380,6 +400,35 @@
   }
   .add-task-row input:focus { border-color: var(--primary); background: #fafffb; }
   .add-task-row input.time-input { flex: 0 0 110px; }
+  .add-task-row input.datetime-input { flex: 0 0 auto; font-size: 12px; color: var(--text-light); }
+
+  /* 提醒弹窗 */
+  .remind-popup {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: #fff; border-radius: 20px;
+    padding: 28px 24px; width: 300px; max-width: 90vw;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.2);
+    z-index: 2000; opacity: 0; pointer-events: none;
+    transition: all .3s; text-align: center;
+  }
+  .remind-popup.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+  .remind-popup .remind-icon { font-size: 48px; margin-bottom: 12px; animation: bounce 0.6s infinite alternate; }
+  @keyframes bounce { from{transform:translateY(0);} to{transform:translateY(-8px);} }
+  .remind-popup .remind-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .remind-popup .remind-desc { font-size: 13px; color: var(--text-light); margin-bottom: 16px; }
+  .remind-popup .remind-btns { display: flex; gap: 10px; }
+  .remind-popup .remind-btns button {
+    flex: 1; padding: 10px; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .remind-popup .btn-complete { background: var(--primary); color: #fff; }
+  .remind-popup .btn-later { background: var(--bg-soft); color: var(--text); }
+  .remind-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 1999; display: none;
+  }
+  .remind-overlay.show { display: block; }
   .btn {
     padding: 10px 16px;
     border: none; border-radius: var(--radius-sm);
@@ -1018,8 +1067,8 @@
   <section class="page active" id="page-plan">
     <div class="page-header">
       <div class="page-title-wrap">
-        <h1>📋 每日工作计划</h1>
-        <p>今日待办 · 完成后打勾 · 坚持每日进步</p>
+        <h1>📋 任务待办</h1>
+        <p>添加任务 · 设置提醒 · 到点通知 · 完成打勾</p>
       </div>
       <button class="btn-action" onclick="addTask()">+ 新增任务</button>
     </div>
@@ -1028,21 +1077,24 @@
       <div class="stat-card"><div class="num" id="totalCount">0</div><div class="label">总任务</div></div>
       <div class="stat-card"><div class="num" id="doneCount">0</div><div class="label">已完成</div></div>
       <div class="stat-card"><div class="num" id="rate">0%</div><div class="label">完成率</div></div>
+      <div class="stat-card"><div class="num" id="remindCount" style="color:var(--warning);">0</div><div class="label">待提醒</div></div>
     </div>
 
     <div class="card">
       <div class="card-header">
         <div class="card-icon">✅</div>
         <div>
-          <div class="card-title">今日任务</div>
+          <div class="card-title">任务列表</div>
           <div class="card-subtitle">每天运动30分钟 · 英语练习30分钟 · 可自由增减</div>
         </div>
       </div>
       <div class="task-progress-bar"><div class="task-progress-fill" id="progressFill" style="width:0%"></div></div>
       <div id="taskList"></div>
       <div class="add-task-row">
-        <input type="text" id="newTaskName" placeholder="输入新任务名称...">
+        <input type="text" id="newTaskName" placeholder="输入任务名称...">
         <input type="text" class="time-input" id="newTaskTime" placeholder="时长/备注">
+        <input type="date" class="datetime-input" id="newTaskDate" title="提醒日期">
+        <input type="time" class="datetime-input" id="newTaskClock" title="提醒时间">
         <button class="btn btn-primary" onclick="addTask()">+ 添加</button>
       </div>
     </div>
@@ -1309,6 +1361,18 @@
   </div>
 </div>
 
+<!-- 提醒弹窗 -->
+<div class="remind-overlay" id="remindOverlay"></div>
+<div class="remind-popup" id="remindPopup">
+  <div class="remind-icon">⏰</div>
+  <div class="remind-title" id="remindTitle">任务提醒</div>
+  <div class="remind-desc" id="remindDesc"></div>
+  <div class="remind-btns">
+    <button class="btn-later" onclick="snoozeReminder()">稍后提醒</button>
+    <button class="btn-complete" onclick="completeReminder()">标记完成</button>
+  </div>
+</div>
+
 <script>
 // ===== 工具函数 =====
 const $ = s => document.querySelector(s);
@@ -1349,7 +1413,7 @@ function switchPage(page) {
 
   // 更新顶部栏标题
   const titles = {
-    plan: '📋 每日计划', travel: '✈️ 旅行规划', food: '🍜 美食推荐',
+    plan: '📋 任务待办', travel: '✈️ 旅行规划', food: '🍜 美食推荐',
     profile: '👤 个人信息', favorites: '⭐ 我的收藏'
   };
   if ($('#topbarTitle')) $('#topbarTitle').textContent = titles[page] || '我的工作台';
@@ -1369,10 +1433,10 @@ document.querySelectorAll('.nav-item, .bottom-item').forEach(item => {
   item.addEventListener('click', () => switchPage(item.dataset.page));
 });
 
-// ===== 每日任务 =====
+// ===== 任务待办 =====
 const DEFAULT_TASKS = [
-  { name: '运动30分钟', time: '30分钟', done: false },
-  { name: '英语练习30分钟', time: '30分钟', done: false }
+  { name: '运动30分钟', time: '30分钟', done: false, remindDate: '', remindTime: '', reminded: false },
+  { name: '英语练习30分钟', time: '30分钟', done: false, remindDate: '', remindTime: '', reminded: false }
 ];
 
 function getTaskKey() { return 'tasks_' + todayStr(); }
@@ -1380,14 +1444,60 @@ function getTaskKey() { return 'tasks_' + todayStr(); }
 function loadTasks() {
   let data = localStorage.getItem(getTaskKey());
   if (!data) {
+    // 迁移旧数据格式（兼容无 remindDate 的旧任务）
     data = JSON.stringify(DEFAULT_TASKS);
     localStorage.setItem(getTaskKey(), data);
   }
-  return JSON.parse(data);
+  const tasks = JSON.parse(data);
+  // 兼容旧任务：补全字段
+  tasks.forEach(t => {
+    if (t.remindDate === undefined) t.remindDate = '';
+    if (t.remindTime === undefined) t.remindTime = '';
+    if (t.reminded === undefined) t.reminded = false;
+  });
+  return tasks;
 }
 
 function saveTasks(tasks) {
   localStorage.setItem(getTaskKey(), JSON.stringify(tasks));
+}
+
+// 格式化提醒时间显示
+function formatRemind(date, time) {
+  if (!date && !time) return '';
+  const today = new Date();
+  const todayStr2 = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  let dateText = '';
+  if (date) {
+    if (date === todayStr2) dateText = '今天';
+    else {
+      const d = new Date(date);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const tomorrowStr = tomorrow.getFullYear() + '-' + String(tomorrow.getMonth()+1).padStart(2,'0') + '-' + String(tomorrow.getDate()).padStart(2,'0');
+      if (date === tomorrowStr) dateText = '明天';
+      else dateText = (d.getMonth()+1) + '月' + d.getDate() + '日';
+    }
+  }
+  return (dateText || '') + (time ? ' ' + time : '');
+}
+
+// 判断任务提醒状态
+function getTaskRemindStatus(t) {
+  if (t.done) return 'done';
+  if (!t.remindDate && !t.remindTime) return 'normal';
+  const now = new Date();
+  const remindStr = (t.remindDate || formatDateISO(now)) + ' ' + (t.remindTime || '23:59');
+  const remindDate = new Date(remindStr.replace(/-/g, '/'));
+  const diff = remindDate - now;
+  if (diff < 0 && !t.reminded) return 'overdue'; // 已过期未提醒
+  if (diff < 0) return 'overdue'; // 已过期
+  if (diff < 30 * 60 * 1000) return 'urgent'; // 30分钟内
+  return 'normal';
+}
+
+function formatDateISO(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
 function renderTasks() {
@@ -1395,28 +1505,61 @@ function renderTasks() {
   const list = $('#taskList');
   list.innerHTML = '';
   let done = 0;
+  let remindCount = 0;
+
   tasks.forEach((t, i) => {
     if (t.done) done++;
+    const status = getTaskRemindStatus(t);
+    if (status === 'overdue' || status === 'urgent') remindCount++;
+
     const div = document.createElement('div');
-    div.className = 'task-item' + (t.done ? ' done' : '');
+    let cls = 'task-item';
+    if (t.done) cls += ' done';
+    if (status === 'overdue' && !t.done) cls += ' overdue';
+    if (status === 'urgent' && !t.done) cls += ' remind-due';
+    div.className = cls;
+
+    let tagsHtml = '';
+    if (t.done) {
+      tagsHtml = '<span class="task-tag done-tag">✅ 已完成</span>';
+    } else if (t.remindDate || t.remindTime) {
+      const remindText = formatRemind(t.remindDate, t.remindTime);
+      if (status === 'overdue') {
+        tagsHtml = '<span class="task-tag overdue">⏰ 已过期 ' + escapeHtml(remindText) + '</span>';
+      } else if (status === 'urgent') {
+        tagsHtml = '<span class="task-tag urgent">⏰ 即将到期 ' + escapeHtml(remindText) + '</span>';
+      } else {
+        tagsHtml = '<span class="task-tag remind">⏰ ' + escapeHtml(remindText) + '</span>';
+      }
+    }
+    if (t.time && !t.remindDate && !t.remindTime) {
+      tagsHtml = '<span class="task-time-old">' + escapeHtml(t.time) + '</span>';
+    }
+
     div.innerHTML = `
       <div class="checkbox ${t.done?'checked':''}" onclick="toggleTask(${i})"></div>
-      <span class="task-name">${escapeHtml(t.name)}</span>
-      ${t.time ? `<span class="task-time">${escapeHtml(t.time)}</span>` : ''}
+      <div class="task-content">
+        <span class="task-name">${escapeHtml(t.name)}</span>
+        <div class="task-meta-row">${tagsHtml}</div>
+      </div>
       <button class="task-delete" onclick="deleteTask(${i})">✕</button>
     `;
     list.appendChild(div);
   });
+
   $('#doneCount').textContent = done;
   $('#totalCount').textContent = tasks.length;
   const rate = tasks.length ? Math.round(done/tasks.length*100) : 0;
   $('#rate').textContent = rate + '%';
   $('#progressFill').style.width = rate + '%';
+  const rcEl = $('#remindCount');
+  if (rcEl) rcEl.textContent = remindCount;
 }
 
 function toggleTask(i) {
   const tasks = loadTasks();
   tasks[i].done = !tasks[i].done;
+  if (tasks[i].done) tasks[i].reminded = true;
   saveTasks(tasks);
   renderTasks();
 }
@@ -1431,21 +1574,119 @@ function deleteTask(i) {
 function addTask() {
   const name = $('#newTaskName').value.trim();
   const time = $('#newTaskTime').value.trim();
+  const date = $('#newTaskDate').value;
+  const clock = $('#newTaskClock').value;
   if (!name) {
-    // 聚焦输入框提示
     $('#newTaskName').focus();
     return;
   }
   const tasks = loadTasks();
-  tasks.push({ name, time, done: false });
+  tasks.push({
+    name, time, done: false,
+    remindDate: date || '',
+    remindTime: clock || '',
+    reminded: false
+  });
   saveTasks(tasks);
   $('#newTaskName').value = '';
   $('#newTaskTime').value = '';
+  $('#newTaskDate').value = '';
+  $('#newTaskClock').value = '';
   renderTasks();
 }
 
 $('#newTaskName').addEventListener('keydown', e => { if(e.key==='Enter') addTask(); });
-$('#newTaskTime').addEventListener('keydown', e => { if(e.key==='Enter') addTask(); });
+
+// 默认填充今天的日期到日期选择器
+(function() {
+  const today = new Date();
+  const todayISO = formatDateISO(today);
+  const dateInput = $('#newTaskDate');
+  if (dateInput) dateInput.value = todayISO;
+})();
+
+// ===== 提醒检查 =====
+let currentRemindTask = null;
+
+function checkReminders() {
+  const tasks = loadTasks();
+  const now = new Date();
+  let changed = false;
+  for (let i = 0; i < tasks.length; i++) {
+    const t = tasks[i];
+    if (t.done || t.reminded) continue;
+    if (!t.remindDate && !t.remindTime) continue;
+    const remindStr = (t.remindDate || formatDateISO(now)) + ' ' + (t.remindTime || '23:59');
+    const remindDate = new Date(remindStr.replace(/-/g, '/'));
+    if (now >= remindDate) {
+      // 到时间了，触发提醒
+      t.reminded = true;
+      changed = true;
+      showReminder(i, t);
+    }
+  }
+  if (changed) saveTasks(tasks);
+}
+
+function showReminder(taskIndex, task) {
+  currentRemindTask = taskIndex;
+  const remindText = formatRemind(task.remindDate, task.remindTime);
+  $('#remindTitle').textContent = '⏰ ' + task.name;
+  $('#remindDesc').innerHTML = '提醒时间：' + escapeHtml(remindText) + (task.time ? '<br>备注：' + escapeHtml(task.time) : '');
+  $('#remindPopup').classList.add('show');
+  $('#remindOverlay').classList.add('show');
+  // 振动
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+  // 声音提示（用 AudioContext 生成短音）
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.3, 0.6].forEach(delay => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 880; osc.type = 'sine';
+      gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + delay + 0.05);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + delay + 0.25);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.3);
+    });
+  } catch(e) {}
+}
+
+function snoozeReminder() {
+  $('#remindPopup').classList.remove('show');
+  $('#remindOverlay').classList.remove('show');
+  // 稍后提醒 = 5分钟后再次提醒
+  if (currentRemindTask !== null) {
+    const tasks = loadTasks();
+    const t = tasks[currentRemindTask];
+    const later = new Date(Date.now() + 5 * 60 * 1000);
+    t.remindDate = formatDateISO(later);
+    t.remindTime = String(later.getHours()).padStart(2,'0') + ':' + String(later.getMinutes()).padStart(2,'0');
+    t.reminded = false;
+    saveTasks(tasks);
+    renderTasks();
+  }
+  currentRemindTask = null;
+}
+
+function completeReminder() {
+  $('#remindPopup').classList.remove('show');
+  $('#remindOverlay').classList.remove('show');
+  if (currentRemindTask !== null) {
+    const tasks = loadTasks();
+    tasks[currentRemindTask].done = true;
+    saveTasks(tasks);
+    renderTasks();
+  }
+  currentRemindTask = null;
+}
+
+// 每 30 秒检查一次提醒
+setInterval(checkReminders, 30000);
+// 页面加载后 3 秒检查一次
+setTimeout(checkReminders, 3000);
 
 // ===== 灵感记录 =====
 function loadIdeas() { return JSON.parse(localStorage.getItem('ideas') || '[]'); }
