@@ -1442,7 +1442,10 @@
             <div class="card-title">收支明细</div>
             <div class="card-subtitle" id="finRecordCount">共 0 条记录</div>
           </div>
-          <select id="finMonthFilter" onchange="renderFinances()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fff;color:var(--text);font-weight:600;">
+          <select id="finMonthFilter" onchange="onFinMonthChange()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fff;color:var(--text);font-weight:600;">
+          </select>
+          <select id="finDayFilter" onchange="renderFinances()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fff;color:var(--text);font-weight:600;display:none;">
+            <option value="">全部日期</option>
           </select>
         </div>
         <div id="finList"></div>
@@ -2558,6 +2561,31 @@ function getAvailableMonths(arr) {
   });
 }
 
+// 月份切换时，更新日期选择器
+function onFinMonthChange() {
+  const arr = loadFinances();
+  const monthSelect = $('#finMonthFilter');
+  const daySelect = $('#finDayFilter');
+  const selMonth = monthSelect.value;
+  const [selYear, selMonthNum] = selMonth.split('-').map(Number);
+
+  // 获取该月所有有记录的日期
+  const days = new Set();
+  arr.forEach(item => {
+    const d = new Date(item.date);
+    if (d.getFullYear() === selYear && (d.getMonth()+1) === selMonthNum) {
+      days.add(d.getDate());
+    }
+  });
+
+  const sortedDays = Array.from(days).sort((a, b) => b - a);
+  daySelect.innerHTML = '<option value="">全部日期</option>' +
+    sortedDays.map(d => '<option value="' + d + '">' + d + '日</option>').join('');
+  daySelect.value = '';
+  daySelect.style.display = 'inline-block';
+  renderFinances();
+}
+
 function renderFinances() {
   const arr = loadFinances();
   const list = $('#finList');
@@ -2566,23 +2594,37 @@ function renderFinances() {
 
   // 初始化月份选择器
   const monthSelect = $('#finMonthFilter');
+  const daySelect = $('#finDayFilter');
   const months = getAvailableMonths(arr);
   const currentVal = monthSelect.value;
+  const wasEmpty = !monthSelect.innerHTML;
   monthSelect.innerHTML = months.map(m => '<option value="' + m.value + '">' + m.label + '</option>').join('');
-  // 恢复选中值，默认本月
-  if (currentVal && months.some(m => m.value === currentVal)) {
-    monthSelect.value = currentVal;
-  } else {
+  if (wasEmpty) {
     const now = new Date();
     monthSelect.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    onFinMonthChange();
+    return;
+  }
+  if (currentVal && months.some(m => m.value === currentVal)) {
+    monthSelect.value = currentVal;
   }
 
-  // 筛选选中月份
+  // 如果日期选择器还没初始化，先初始化
+  if (!daySelect.innerHTML.trim() || daySelect.innerHTML === '<option value="">全部日期</option>') {
+    onFinMonthChange();
+    return;
+  }
+
+  // 筛选选中月份 + 日期
   const selMonth = monthSelect.value;
   const [selYear, selMonthNum] = selMonth.split('-').map(Number);
+  const selDay = daySelect.value ? parseInt(daySelect.value) : 0;
+
   const filtered = arr.filter(item => {
     const d = new Date(item.date);
-    return d.getFullYear() === selYear && (d.getMonth()+1) === selMonthNum;
+    if (d.getFullYear() !== selYear || (d.getMonth()+1) !== selMonthNum) return false;
+    if (selDay && d.getDate() !== selDay) return false;
+    return true;
   });
 
   if (filtered.length === 0) {
