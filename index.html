@@ -1176,18 +1176,26 @@
 
     <div class="card" style="padding:24px;">
       <div class="profile-edit-row">
-        <div class="profile-avatar-large" id="profileAvatarPreview" onclick="document.getElementById('avatarInput').click()">
-          🌸
-          <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)">
+        <div class="profile-avatar-large" id="profileAvatarPreview" style="position:relative;">
+          <div id="avatarDisplay" style="width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:36px;">🌸</div>
+          <div style="position:absolute;bottom:-2px;right:-2px;width:24px;height:24px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.2);pointer-events:none;">📷</div>
+          <input type="file" id="avatarInput" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
         </div>
         <div class="profile-fields">
           <input type="text" id="profileName" placeholder="你的昵称" maxlength="20">
           <input type="text" id="profileBio" placeholder="一句话介绍自己" maxlength="50">
         </div>
       </div>
-      <div style="margin-bottom:16px;">
-        <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:6px;">头像 Emoji（也可直接输入emoji）</label>
-        <input type="text" id="profileEmoji" placeholder="🌸" maxlength="4" style="width:80px;text-align:center;font-size:20px;border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--bg);" oninput="updateAvatarPreview()">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
+        <div>
+          <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:6px;">头像 Emoji</label>
+          <input type="text" id="profileEmoji" placeholder="🌸" maxlength="4" style="width:80px;text-align:center;font-size:20px;border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--bg);" oninput="onEmojiInput()">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:6px;">上传头像图片</label>
+          <button class="btn-action" style="font-size:12px;padding:8px 14px;" onclick="document.getElementById('avatarInput').click()">📷 选择图片上传</button>
+          <button id="removeAvatarBtn" class="btn-action" style="font-size:12px;padding:8px 14px;margin-left:8px;display:none;border-color:var(--danger);color:var(--danger);" onclick="removeAvatar()">✕ 移除图片</button>
+        </div>
       </div>
       <button class="btn-action" style="background:var(--primary);color:#fff;" onclick="saveProfile()">💾 保存信息</button>
     </div>
@@ -1938,16 +1946,51 @@ function initProfile() {
   $('#profileBio').value = bio;
   $('#profileEmoji').value = emoji;
   updateAvatarPreview();
+  bindAvatarUpload();
 }
 
 function updateAvatarPreview() {
-  const emoji = $('#profileEmoji').value || '🌸';
   const p = loadProfile();
-  const preview = $('#profileAvatarPreview');
+  const display = $('#avatarDisplay');
+  const removeBtn = $('#removeAvatarBtn');
   if (p.avatar) {
-    preview.innerHTML = '<img src="' + p.avatar + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover"><input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)">';
+    display.innerHTML = '<img src="' + p.avatar + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">';
+    if (removeBtn) removeBtn.style.display = 'inline-block';
   } else {
-    preview.innerHTML = emoji + '<input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)">';
+    const emoji = ($('#profileEmoji') ? $('#profileEmoji').value : '') || p.emoji || '🌸';
+    display.textContent = emoji;
+    if (removeBtn) removeBtn.style.display = 'none';
+  }
+}
+
+function onEmojiInput() {
+  const p = loadProfile();
+  // 如果有图片头像，emoji 不覆盖图片
+  if (p.avatar) return;
+  const emoji = $('#profileEmoji').value || '🌸';
+  $('#avatarDisplay').textContent = emoji;
+}
+
+function removeAvatar() {
+  const p = loadProfile();
+  delete p.avatar;
+  saveProfileData(p);
+  // 恢复 emoji 显示
+  const emoji = ($('#profileEmoji') ? $('#profileEmoji').value : '') || p.emoji || '🌸';
+  $('#avatarDisplay').textContent = emoji;
+  $('#removeAvatarBtn').style.display = 'none';
+  // 更新侧边栏和顶部栏
+  $('#userAvatar').textContent = emoji;
+  const topbarAvatar = $('#topbarAvatar');
+  if (topbarAvatar) topbarAvatar.textContent = emoji;
+}
+
+// 绑定文件上传事件（在 initProfile 中调用）
+function bindAvatarUpload() {
+  const input = $('#avatarInput');
+  if (input && !input._bound) {
+    input._bound = true;
+    input.addEventListener('change', uploadAvatar);
   }
 }
 
@@ -1956,6 +1999,7 @@ function uploadAvatar(event) {
   if (!file) return;
   if (file.size > 500000) {
     alert('图片太大，请选择小于500KB的图片');
+    event.target.value = '';
     return;
   }
   const reader = new FileReader();
@@ -1964,8 +2008,13 @@ function uploadAvatar(event) {
     p.avatar = e.target.result;
     saveProfileData(p);
     updateAvatarPreview();
+    // 实时更新侧边栏和顶部栏
+    $('#userAvatar').innerHTML = '<img src="' + p.avatar + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">';
+    const topbarAvatar = $('#topbarAvatar');
+    if (topbarAvatar) topbarAvatar.innerHTML = '<img src="' + p.avatar + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">';
   };
   reader.readAsDataURL(file);
+  event.target.value = '';
 }
 
 function saveProfile() {
