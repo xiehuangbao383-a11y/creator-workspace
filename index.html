@@ -1096,6 +1096,9 @@
     <div class="nav-item" data-page="food">
       <div class="nav-icon">🍜</div><span>美食推荐</span>
     </div>
+    <div class="nav-item" data-page="finance">
+      <div class="nav-icon">💰</div><span>收支管理</span>
+    </div>
   </div>
 
   <div class="nav-section">
@@ -1356,6 +1359,99 @@
     </div>
   </section>
 
+  <!-- 收支管理 -->
+  <section class="page" id="page-finance">
+    <!-- 锁定状态 -->
+    <div id="financeLock" style="display:none;">
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:56px;margin-bottom:16px;">🔒</div>
+        <h2 style="font-size:18px;margin-bottom:8px;">收支管理已锁定</h2>
+        <p style="font-size:13px;color:var(--text-light);margin-bottom:24px;">输入密码解锁查看</p>
+        <input type="password" id="financePwd" placeholder="请输入密码" maxlength="20"
+          style="width:200px;padding:12px 16px;border:1px solid var(--border);border-radius:12px;font-size:16px;text-align:center;letter-spacing:4px;background:#fff;" onkeydown="if(event.key==='Enter')unlockFinance()">
+        <br><br>
+        <button class="btn-action" style="background:var(--primary);color:#fff;padding:12px 40px;" onclick="unlockFinance()">🔓 解锁</button>
+        <p id="pwdHint" style="font-size:11px;color:var(--danger);margin-top:12px;display:none;">密码错误，请重试</p>
+        <p style="font-size:11px;color:var(--text-light);margin-top:16px;">首次使用请设置密码</p>
+      </div>
+    </div>
+
+    <!-- 解锁后内容 -->
+    <div id="financeContent" style="display:none;">
+      <div class="page-header">
+        <div class="page-title-wrap">
+          <h1>💰 收支管理</h1>
+          <p>记录每一笔 · 清楚每一分</p>
+        </div>
+        <button class="btn-action" style="background:var(--text-light);color:#fff;font-size:12px;" onclick="lockFinance()">🔒 锁定</button>
+      </div>
+
+      <!-- 统计卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card" style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9);">
+          <div class="num" id="finIncome" style="color:#2e7d32;">¥0</div>
+          <div class="label">本月收入</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#ffebee,#ffcdd2);">
+          <div class="num" id="finExpense" style="color:#c62828;">¥0</div>
+          <div class="label">本月支出</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#e3f2fd,#bbdefb);">
+          <div class="num" id="finBalance" style="color:#1565c0;">¥0</div>
+          <div class="label">本月结余</div>
+        </div>
+      </div>
+
+      <!-- 记一笔 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">✏️</div>
+          <div>
+            <div class="card-title">记一笔</div>
+            <div class="card-subtitle">选择类型 · 输入金额 · 记录明细</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button id="typeExpense" class="fin-type-btn active" onclick="setFinType('expense')" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;background:#ffebee;color:#c62828;">支出 💸</button>
+          <button id="typeIncome" class="fin-type-btn" onclick="setFinType('income')" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--text-light);">收入 💰</button>
+        </div>
+
+        <div class="add-task-row" style="flex-wrap:wrap;">
+          <input type="number" id="finAmount" placeholder="金额" step="0.01" style="flex:0 0 100px;font-size:16px;font-weight:700;">
+          <select id="finCategory" style="padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;color:var(--text);flex:0 0 auto;">
+            <option value="餐饮">🍽️ 餐饮</option>
+            <option value="交通">🚗 交通</option>
+            <option value="购物">🛍️ 购物</option>
+            <option value="娱乐">🎮 娱乐</option>
+            <option value="住房">🏠 住房</option>
+            <option value="医疗">💊 医疗</option>
+            <option value="教育">📚 教育</option>
+            <option value="其他">📦 其他</option>
+          </select>
+          <input type="text" id="finNote" placeholder="备注（可选）" style="flex:1;min-width:100px;">
+          <button class="btn btn-primary" onclick="addFinance()">+ 记录</button>
+        </div>
+      </div>
+
+      <!-- 记录列表 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">📋</div>
+          <div>
+            <div class="card-title">收支明细</div>
+            <div class="card-subtitle" id="finRecordCount">共 0 条记录</div>
+          </div>
+        </div>
+        <div id="finList"></div>
+        <div class="empty-state" id="finEmpty" style="display:none;">
+          <div class="icon">💰</div>
+          <p>还没有记录，点击上方记一笔</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- 美食推荐 -->
   <section class="page" id="page-food">
     <div class="page-header">
@@ -1413,6 +1509,9 @@
   <div class="bottom-item" data-page="food">
     <div class="icon">🍜</div><span>美食</span>
   </div>
+  <div class="bottom-item" data-page="finance">
+    <div class="icon">💰</div><span>收支</span>
+  </div>
 </nav>
 
 <!-- 悬浮添加按钮 -->
@@ -1469,13 +1568,15 @@ function switchPage(page) {
   document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
   $('#page-' + page).classList.add('active');
 
-  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页不显示
-  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites') ? 'none' : 'flex';
+  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页、收支页不显示
+  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites' || page === 'finance') ? 'none' : 'flex';
 
   // 收藏页：渲染收藏内容
   if (page === 'favorites') renderFavorites();
   // 个人信息页：更新统计
   if (page === 'profile') updateProfileStats();
+  // 收支页：检查解锁状态
+  if (page === 'finance') checkFinanceLock();
 
   // 移动端切换页面后关闭侧边栏
   closeSidebar();
@@ -1483,7 +1584,7 @@ function switchPage(page) {
   // 更新顶部栏标题
   const titles = {
     plan: '📋 任务待办', travel: '✈️ 旅行规划', food: '🍜 美食推荐',
-    profile: '👤 个人信息', favorites: '⭐ 我的收藏'
+    profile: '👤 个人信息', favorites: '⭐ 我的收藏', finance: '💰 收支管理'
   };
   if ($('#topbarTitle')) $('#topbarTitle').textContent = titles[page] || '我的工作台';
 }
@@ -2322,6 +2423,174 @@ function loadCredits() {
   .catch(err => {
     console.log('余额查询失败:', err);
     amountEl.innerHTML = '查询失败<span class="unit"></span>';
+  });
+}
+
+// ===== 收支管理 =====
+let finType = 'expense';
+let finUnlocked = false;
+
+function loadFinances() { return JSON.parse(localStorage.getItem('finances') || '[]'); }
+function saveFinances(arr) { localStorage.setItem('finances', JSON.stringify(arr)); }
+function getFinPwd() { return localStorage.getItem('fin_pwd') || ''; }
+
+function checkFinanceLock() {
+  if (finUnlocked) {
+    $('#financeLock').style.display = 'none';
+    $('#financeContent').style.display = 'block';
+    renderFinances();
+    return;
+  }
+  $('#financeLock').style.display = 'block';
+  $('#financeContent').style.display = 'none';
+  // 如果没有设置过密码，提示设置
+  if (!getFinPwd()) {
+    const hint = $('#pwdHint');
+    hint.style.display = 'block';
+    hint.style.color = 'var(--primary-dark)';
+    hint.textContent = '🆕 首次使用，请输入你想设置的密码';
+    $('#financePwd').placeholder = '设置密码';
+  }
+}
+
+function unlockFinance() {
+  const pwd = $('#financePwd').value;
+  const stored = getFinPwd();
+  if (!pwd) { $('#financePwd').focus(); return; }
+
+  if (!stored) {
+    // 首次设置密码
+    localStorage.setItem('fin_pwd', pwd);
+    finUnlocked = true;
+    $('#financeLock').style.display = 'none';
+    $('#financeContent').style.display = 'block';
+    renderFinances();
+    $('#financePwd').value = '';
+  } else if (pwd === stored) {
+    finUnlocked = true;
+    $('#financeLock').style.display = 'none';
+    $('#financeContent').style.display = 'block';
+    renderFinances();
+    $('#financePwd').value = '';
+  } else {
+    const hint = $('#pwdHint');
+    hint.style.display = 'block';
+    hint.style.color = 'var(--danger)';
+    hint.textContent = '❌ 密码错误，请重试';
+    $('#financePwd').value = '';
+    $('#financePwd').focus();
+  }
+}
+
+function lockFinance() {
+  finUnlocked = false;
+  $('#financeLock').style.display = 'block';
+  $('#financeContent').style.display = 'none';
+  $('#financePwd').value = '';
+}
+
+function setFinType(type) {
+  finType = type;
+  const expBtn = $('#typeExpense');
+  const incBtn = $('#typeIncome');
+  if (type === 'expense') {
+    expBtn.classList.add('active');
+    expBtn.style.background = '#ffebee';
+    expBtn.style.color = '#c62828';
+    incBtn.classList.remove('active');
+    incBtn.style.background = '#fff';
+    incBtn.style.color = 'var(--text-light)';
+  } else {
+    incBtn.classList.add('active');
+    incBtn.style.background = '#e8f5e9';
+    incBtn.style.color = '#2e7d32';
+    expBtn.classList.remove('active');
+    expBtn.style.background = '#fff';
+    expBtn.style.color = 'var(--text-light)';
+  }
+}
+
+function addFinance() {
+  const amount = parseFloat($('#finAmount').value);
+  const category = $('#finCategory').value;
+  const note = $('#finNote').value.trim();
+  if (!amount || amount <= 0) {
+    $('#finAmount').focus();
+    return;
+  }
+  const arr = loadFinances();
+  arr.unshift({
+    type: finType,
+    amount: amount.toFixed(2),
+    category,
+    note,
+    date: new Date().toISOString()
+  });
+  saveFinances(arr);
+  $('#finAmount').value = '';
+  $('#finNote').value = '';
+  renderFinances();
+}
+
+function deleteFinance(i) {
+  const arr = loadFinances();
+  arr.splice(i, 1);
+  saveFinances(arr);
+  renderFinances();
+}
+
+function renderFinances() {
+  const arr = loadFinances();
+  const list = $('#finList');
+  const empty = $('#finEmpty');
+  list.innerHTML = '';
+
+  if (arr.length === 0) {
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+  }
+
+  // 统计本月
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  let income = 0, expense = 0;
+
+  arr.forEach((item, i) => {
+    const d = new Date(item.date);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      if (item.type === 'income') income += parseFloat(item.amount);
+      else expense += parseFloat(item.amount);
+    }
+  });
+
+  $('#finIncome').textContent = '¥' + income.toFixed(2);
+  $('#finExpense').textContent = '¥' + expense.toFixed(2);
+  $('#finBalance').textContent = '¥' + (income - expense).toFixed(2);
+  $('#finRecordCount').textContent = '共 ' + arr.length + ' 条记录';
+
+  // 渲染列表
+  arr.forEach((item, i) => {
+    const d = new Date(item.date);
+    const dateStr = (d.getMonth()+1) + '月' + d.getDate() + '日 ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    const isIncome = item.type === 'income';
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);';
+    div.innerHTML = `
+      <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:${isIncome ? '#e8f5e9' : '#ffebee'};">
+        ${isIncome ? '💰' : '💸'}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;">${escapeHtml(item.category)}${item.note ? ' · ' + escapeHtml(item.note) : ''}</div>
+        <div style="font-size:11px;color:var(--text-light);">${dateStr}</div>
+      </div>
+      <div style="font-size:16px;font-weight:700;color:${isIncome ? '#2e7d32' : '#c62828'};flex-shrink:0;">
+        ${isIncome ? '+' : '-'}¥${item.amount}
+      </div>
+      <button class="task-delete" onclick="deleteFinance(${i})" style="opacity:1;">✕</button>
+    `;
+    list.appendChild(div);
   });
 }
 
