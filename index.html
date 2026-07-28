@@ -1080,6 +1080,16 @@
       <div class="stat-card"><div class="num" id="remindCount" style="color:var(--warning);">0</div><div class="label">待提醒</div></div>
     </div>
 
+    <!-- 通知权限提示 -->
+    <div id="notifyBar" style="display:none;background:linear-gradient(135deg,#e3f2fd,#bbdefb);border:1px solid #90caf9;border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">🔔</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;color:#1565c0;">开启消息通知</div>
+        <div style="font-size:11px;color:#5e92f3;">到点在消息栏提醒你，不怕错过任务</div>
+      </div>
+      <button class="btn-action" style="background:#1565c0;color:#fff;font-size:12px;padding:8px 14px;flex-shrink:0;" onclick="enableNotifications()">开启</button>
+    </div>
+
     <div class="card">
       <div class="card-header">
         <div class="card-icon">✅</div>
@@ -1677,19 +1687,47 @@ function showReminder(taskIndex, task) {
   } catch(e) {}
 }
 
-// 请求通知权限
+// 检查通知权限状态，显示提示条
 function requestNotifyPermission() {
-  if ('Notification' in window) {
-    if (Notification.permission === 'default') {
-      Notification.requestPermission().then(function(result) {
-        if (result === 'granted') {
-          console.log('通知权限已开启');
-        } else {
-          console.log('通知权限被拒绝');
-        }
-      });
-    }
+  const bar = $('#notifyBar');
+  if (!bar) return;
+  if (!('Notification' in window)) {
+    // 浏览器不支持通知
+    bar.style.display = 'none';
+    return;
   }
+  if (Notification.permission === 'default') {
+    // 还未授权，显示提示条
+    bar.style.display = 'flex';
+  } else if (Notification.permission === 'granted') {
+    // 已授权
+    bar.style.display = 'none';
+  } else {
+    // 已拒绝
+    bar.style.display = 'none';
+  }
+}
+
+// 用户点击「开启」按钮
+function enableNotifications() {
+  if (!('Notification' in window)) {
+    alert('你的浏览器不支持消息通知');
+    return;
+  }
+  Notification.requestPermission().then(function(result) {
+    if (result === 'granted') {
+      $('#notifyBar').style.display = 'none';
+      // 发一条测试通知
+      try {
+        new Notification('✅ 通知已开启', {
+          body: '任务提醒功能已就绪！',
+          icon: 'icon-192.png'
+        });
+      } catch(e) {}
+    } else if (result === 'denied') {
+      alert('通知权限被拒绝。请到手机「设置 → Safari → 通知」中手动开启，或重新添加到主屏幕。');
+    }
+  });
 }
 
 function snoozeReminder() {
