@@ -1273,6 +1273,53 @@ function deleteReview(i) {
 function loadFoods() { return JSON.parse(localStorage.getItem('foods') || '[]'); }
 function saveFoods(arr) { localStorage.setItem('foods', JSON.stringify(arr)); }
 
+// 通用 DeepSeek API 调用（带自动重试）
+const DS_KEY = 'sk-ff3c8d7ed46f466991e94c11f7badc22';
+async function callDeepSeek(systemMsg, userPrompt, maxTokens) {
+  const maxRetries = 3;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + DS_KEY
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemMsg },
+            { role: 'user', content: userPrompt }
+          ],
+          max_tokens: maxTokens || 2000,
+          temperature: 0.7,
+          stream: false
+        })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        return data.choices[0].message.content;
+      }
+      if (resp.status === 503 || resp.status === 429 || resp.status === 502) {
+        // 服务繁忙，等 1.5 秒后重试
+        console.log('DeepSeek ' + resp.status + '，第' + (i+1) + '次重试...');
+        if (i < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 1500));
+          continue;
+        }
+      }
+      throw new Error('HTTP ' + resp.status);
+    } catch (err) {
+      if (i < maxRetries - 1 && !String(err).includes('HTTP 4')) {
+        await new Promise(r => setTimeout(r, 1500));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error('重试3次仍失败');
+}
+
 function selectCuisine(el) {
   el.classList.toggle('selected');
   const selected = Array.from(document.querySelectorAll('#cuisineTags .cuisine-tag.selected')).map(t => t.textContent.replace(/^[^\u4e00-\u9fa5a-zA-Z]+\s*/, ''));
@@ -1304,8 +1351,11 @@ function getLocation() {
       const lat = pos.coords.latitude.toFixed(6);
       const lng = pos.coords.longitude.toFixed(6);
 
-      // 优先使用城市级精度，速度更快
-      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=zh-CN&zoom=10', { timeout: 4000 })
+      // 优先使用城市级精度，速度更快（加 4 秒超时保护）
+      Promise.race([
+        fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=zh-CN&zoom=10'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('geocode timeout')), 4000))
+      ])
         .then(r => r.json())
         .then(data => {
           if (data && data.address) {
@@ -1358,35 +1408,10 @@ function searchFood() {
   // 显示 loading
   $('#foodResult').innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>正在为你搜索附近美食，请稍候...</p></div>';
 
-  // 直接调用 DeepSeek API（绕过 Cloudflare Worker，避免国内网络不通）
-  const dsKey = 'sk-ff3c8d7ed46f466991e94c11f7badc22';
   const foodPrompt = `作为美食推荐官，请为以下需求推荐美食：\n\n位置：${location}\n菜系/关键词：${cuisine || '不限'}\n\n请按以下格式输出（中文，真实实用）：\n\n🍽️ 推荐餐厅/美食\n推荐5-8家${location}附近的${cuisine || '当地'}餐厅或美食，每条包含：\n- 餐厅/美食名称\n- 推荐菜（2-3道招牌）\n- 人均价格\n- 位置/区域\n- 一句话推荐理由\n\n💡 点餐建议\n（怎么点最划算、有什么搭配推荐）\n\n🚶 周边逛吃路线\n（吃完可以去哪逛，附近还有什么好吃的）\n\n要求：信息真实，基于实际餐厅和美食。如果不确定具体餐厅，推荐该区域常见的优质选择并说明。`;
 
-  fetch('https://api.deepseek.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + dsKey
-    },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [
-        { role: 'system', content: '你是专业美食推荐官，对中国各地美食和餐厅了如指掌。提供真实、实用的美食推荐。' },
-        { role: 'user', content: foodPrompt }
-      ],
-      max_tokens: 2000,
-      temperature: 0.7,
-      stream: false
-    })
-  })
-  .then(resp => {
-    if (!resp.ok) {
-      return resp.text().then(text => { throw new Error('HTTP ' + resp.status + ': ' + text.substring(0, 100)); });
-    }
-    return resp.json();
-  })
-  .then(data => {
-    const guide = data.choices[0].message.content;
+  callDeepSeek('你是专业美食推荐官，对中国各地美食和餐厅了如指掌。提供真实、实用的美食推荐。', foodPrompt, 2000)
+  .then(guide => {
     const foodItem = {
       location, cuisine,
       content: guide,
@@ -1403,12 +1428,50 @@ function searchFood() {
   })
   .catch(err => {
     console.error('Food search error:', err);
-    $('#foodResult').innerHTML = `<div class="empty-state"><div class="icon">😢</div><p>网络连接超时，请重试</p><p style="font-size:12px;color:var(--text-light);margin-top:8px;">错误：${escapeHtml(err.message)}</p><button class="btn btn-primary" style="margin-top:12px;" onclick="searchFood()">重新搜索</button></div>`;
+    // AI 服务繁忙时的本地兜底推荐
+    const fallback = generateLocalFoodGuide(location, cuisine);
+    const foodItem = {
+      location, cuisine,
+      content: fallback,
+      date: todayFull().split(' ')[0]
+    };
+    const arr = loadFoods();
+    arr.unshift(foodItem);
+    saveFoods(arr);
+    renderFoods();
+    // 清空表单
+    $('#f_location').value = '';
+    $('#f_cuisine').value = '';
+    document.querySelectorAll('#cuisineTags .cuisine-tag').forEach(el => el.classList.remove('selected'));
+    // 提示用户
+    setTimeout(() => {
+      const firstCard = $('#foodResult .food-card');
+      if (firstCard) {
+        const tip = document.createElement('div');
+        tip.style.cssText = 'background:#fff3cd;padding:8px 12px;border-radius:8px;font-size:12px;color:#856404;margin-bottom:8px;';
+        tip.textContent = '⚠️ AI 服务繁忙，已为你生成基础推荐。稍后可重新搜索获取更详细结果。';
+        firstCard.parentNode.insertBefore(tip, firstCard);
+      }
+    }, 100);
   })
   .finally(() => {
     btn.innerHTML = orig;
     btn.disabled = false;
   });
+}
+
+// AI 繁忙时的本地美食兜底推荐
+function generateLocalFoodGuide(location, cuisine) {
+  const cuisineList = cuisine || '当地特色';
+  let text = `🍽️ ${location}${cuisineList}美食推荐（基础版）\n\n`;
+  text += `以下是基于常见经验的推荐，建议到大众点评/美团查看实时评价：\n\n`;
+  text += `1. ${location}老字号${cuisineList}餐厅\n   - 推荐菜：招牌家常菜2-3道\n   - 人均：60-100元\n   - 位置：市中心/老城区\n   - 理由：本地人常去，味道正宗\n\n`;
+  text += `2. ${location}热门${cuisineList}连锁店\n   - 推荐菜：人气套餐\n   - 人均：50-80元\n   - 位置：商圈/地铁站附近\n   - 理由：品质稳定，方便到达\n\n`;
+  text += `3. ${location}夜市/小吃街\n   - 推荐菜：各种小吃拼盘\n   - 人均：30-50元\n   - 位置：当地夜市/美食街\n   - 理由：种类丰富，体验地道烟火气\n\n`;
+  text += `💡 点餐建议\n- 2人建议点3-4个菜，不够再加\n- 看到本地人多的店通常不会踩雷\n- 可以问服务员当天有什么新鲜食材\n\n`;
+  text += `🚶 周边逛吃路线\n- 先在大众点评搜索"${location} ${cuisineList}"查看评分\n- 到了之后先逛一圈对比价格再选\n- 吃完可以搜索附近甜品店/奶茶店\n\n`;
+  text += `\n⚠️ 以上为基础推荐，AI 服务恢复后可重新搜索获取详细餐厅信息。`;
+  return text;
 }
 
 function renderFoods() {
@@ -1551,8 +1614,7 @@ function submitTravelPlan() {
   submitBtn.innerHTML = '⏳ AI 正在生成攻略...';
   submitBtn.disabled = true;
 
-  // 直接调用 DeepSeek API（绕过 Cloudflare Worker，避免国内网络不通）
-  const dsKey = 'sk-ff3c8d7ed46f466991e94c11f7badc22';
+  // 直接调用 DeepSeek API（带自动重试）
   const styleText2 = styles.length ? styles.join('、') : '休闲游';
   const daysText = days || '3天';
   const peopleText = people || '2人';
@@ -1582,60 +1644,106 @@ function submitTravelPlan() {
   travelPrompt += '💡 贴心提示\n（5-8条实用注意事项）\n\n';
   travelPrompt += '要求：信息真实准确，基于实际地理和旅游信息。机票价格给出合理区间。';
 
-  fetch('https://api.deepseek.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + dsKey
-    },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [
-        { role: 'system', content: '你是专业旅行规划师和美食推荐官，提供真实、详细、实用的信息。' },
-        { role: 'user', content: travelPrompt }
-      ],
-      max_tokens: 2000,
-      temperature: 0.7,
-      stream: false
-    })
-  })
-  .then(resp => {
-    if (!resp.ok) return resp.text().then(t => { throw new Error('HTTP ' + resp.status); });
-    return resp.json();
-  })
-  .then(data => {
-    return data.choices[0].message.content;
-  })
+  callDeepSeek('你是专业旅行规划师和美食推荐官，提供真实、详细、实用的信息。', travelPrompt, 2000)
   .then(guideText => {
-    if (guideText) {
-      const travelItem = {
-        destination, origin, start, end: endVal, people, budget, styles, days, dateRange,
-        guide: { raw: guideText, type: 'ai' },
-        date: todayFull().split(' ')[0]
-      };
-      const arr = loadTravels();
-      arr.unshift(travelItem);
-      saveTravels(arr);
-      clearTravelForm();
-      renderTravels();
-      $('#promptCard').classList.remove('show');
-      setTimeout(() => {
-        const first = $('#travelList .travel-card');
-        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-    } else {
-      $('#promptCard').classList.add('show');
-    }
+    const travelItem = {
+      destination, origin, start, end: endVal, people, budget, styles, days, dateRange,
+      guide: { raw: guideText, type: 'ai' },
+      date: todayFull().split(' ')[0]
+    };
+    const arr = loadTravels();
+    arr.unshift(travelItem);
+    saveTravels(arr);
+    clearTravelForm();
+    renderTravels();
+    $('#promptCard').classList.remove('show');
+    setTimeout(() => {
+      const first = $('#travelList .travel-card');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   })
   .catch(err => {
-    console.log('Network error:', err);
-    $('#promptCard').classList.add('show');
-    alert('网络连接较慢，已为你生成提示语。你可以复制提示语发给我，我帮你搜索生成攻略。');
+    console.log('AI error:', err);
+    // AI 服务繁忙时的本地兜底攻略
+    const fallbackGuide = generateLocalTravelGuide({ destination, origin, days: daysText, people: peopleText, budget: budgetText, styles });
+    const travelItem = {
+      destination, origin, start, end: endVal, people, budget, styles, days, dateRange,
+      guide: { raw: fallbackGuide, type: 'local' },
+      date: todayFull().split(' ')[0]
+    };
+    const arr = loadTravels();
+    arr.unshift(travelItem);
+    saveTravels(arr);
+    clearTravelForm();
+    renderTravels();
+    $('#promptCard').classList.remove('show');
+    setTimeout(() => {
+      const first = $('#travelList .travel-card');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   })
   .finally(() => {
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
   });
+}
+
+// AI 繁忙时的本地旅行攻略兜底
+function generateLocalTravelGuide(data) {
+  const { destination, origin, days, people, budget, styles } = data;
+  const isSpecial = styles.includes('特种兵');
+  const isRelax = styles.includes('休闲游') || styles.length === 0;
+  const pace = isSpecial ? '紧凑高效' : (isRelax ? '轻松悠闲' : '张弛有度');
+  const dayCount = parseInt(days) || 3;
+
+  let text = `🌤️ ${destination}概览\n`;
+  text += `${destination}是热门旅游目的地，建议提前查好出行日期的天气，备好防晒和舒适步行鞋。注意保管好随身物品。\n\n`;
+
+  if (origin) {
+    text += `✈️ 交通与机票预估\n`;
+    text += `【到达方式】${origin}→${destination}：建议优先查机票（携程/飞猪），如时间充裕也可选高铁。飞行约2-3小时。\n`;
+    text += `【机票预估】${origin}→${destination}往返经济舱参考价：800-2000元（视季节和提前预订时间而定）\n`;
+    text += `【市内交通】建议地铁+打车结合，下载当地出行App更方便\n\n`;
+  } else {
+    text += `🚗 交通出行\n建议飞机/高铁到达，市内地铁+打车结合出行\n\n`;
+  }
+
+  text += `🏨 住宿建议\n`;
+  text += `1. 市中心/古城区域：出行方便，价格偏高（300-600元/晚）\n`;
+  text += `2. 景区周边：离景点近，适合休闲（200-400元/晚）\n`;
+  text += `3. 交通枢纽附近：性价比高，适合特种兵（150-300元/晚）\n\n`;
+
+  text += `🍜 必吃美食\n`;
+  text += `建议到大众点评搜索"${destination}必吃"查看实时推荐，一般包括：\n`;
+  text += `- 当地特色小吃（人均30-50元）\n`;
+  text += `- 本地人气餐厅（人均60-120元）\n`;
+  text += `- 夜市/美食街体验（人均50-80元）\n\n`;
+
+  text += `📍 最佳行程推荐（${days}，${pace}）\n`;
+  for (let i = 1; i <= dayCount; i++) {
+    text += `第${i}天：`;
+    if (i === 1) text += `抵达${destination}→入住酒店→周边轻松逛→晚餐品尝当地美食\n`;
+    else if (i === dayCount) text += `上午最后打卡→采购伴手礼→返程\n`;
+    else text += `${isSpecial ? '全天高密度打卡3-4个景点' : '深度游览2-3个核心景点'}+午餐+下午茶+晚餐\n`;
+  }
+  text += `\n`;
+
+  text += `💰 预算预估（${people}）\n`;
+  text += `- 交通：${origin ? '往返机票/高铁约' + (origin ? '1000-2500' : '500-1500') + '元/人' : '按需'}\n`;
+  text += `- 住宿：${days}约${dayCount * 300}-${dayCount * 600}元\n`;
+  text += `- 餐饮：约${dayCount * 100}-${dayCount * 200}元/人\n`;
+  text += `- 门票：约200-500元/人\n`;
+  text += `- 其他：约${budget || '500-1000'}元\n`;
+  text += `总计约：${(dayCount * 400 + 1500)}-${(dayCount * 800 + 3000)}元/人\n\n`;
+
+  text += `💡 贴心提示\n`;
+  text += `1. 提前预订机票酒店更便宜\n`;
+  text += `2. 热门景点建议线上提前购票\n`;
+  text += `3. 备好充电宝和身份证\n`;
+  text += `4. 错峰用餐避免排队\n`;
+  text += `5. 保留弹性时间应对突发情况\n\n`;
+  text += `⚠️ 以上为基础攻略，AI 服务恢复后可重新生成获取更详细的信息。`;
+  return text;
 }
 
 function copyPrompt() {
