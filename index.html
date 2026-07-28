@@ -1016,7 +1016,13 @@
       <div class="section-title">🔍 搜索美食</div>
       <p class="hint">输入你所在的位置 + 想吃的菜系，AI 为你推荐</p>
       <div class="form-grid">
-        <div class="form-row"><label>你的位置 *</label><input id="f_location" placeholder="如：广州天河 / 成都春熙路 / 上海静安"></div>
+        <div class="form-row">
+          <label>你的位置 *</label>
+          <div style="display:flex;gap:8px;">
+            <input id="f_location" placeholder="如：广州天河 / 成都春熙路" style="flex:1;">
+            <button class="btn btn-soft" onclick="getLocation()" id="locBtn" style="white-space:nowrap;">📍 定位</button>
+          </div>
+        </div>
         <div class="form-row"><label>菜系 / 关键词</label><input id="f_cuisine" placeholder="如：粤菜 / 火锅 / 日料 / 不限"></div>
       </div>
       <div style="margin-top:16px;">
@@ -1269,9 +1275,66 @@ function saveFoods(arr) { localStorage.setItem('foods', JSON.stringify(arr)); }
 
 function selectCuisine(el) {
   el.classList.toggle('selected');
-  // 同步到输入框
   const selected = Array.from(document.querySelectorAll('#cuisineTags .cuisine-tag.selected')).map(t => t.textContent.replace(/^[^\u4e00-\u9fa5a-zA-Z]+\s*/, ''));
   $('#f_cuisine').value = selected.join('、');
+}
+
+function getLocation() {
+  const btn = $('#locBtn');
+  const orig = btn.innerHTML;
+
+  if (!navigator.geolocation) {
+    alert('你的浏览器不支持定位，请手动输入位置');
+    return;
+  }
+
+  btn.innerHTML = '⏳ 定位中...';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+
+      // 用 OpenStreetMap Nominatim 反向地理编码（免费无需key）
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=zh-CN&zoom=14')
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.address) {
+            const addr = data.address;
+            let parts = [];
+            if (addr.province) parts.push(addr.province.replace(/省$/, ''));
+            if (addr.city) parts.push(addr.city.replace(/市$/, ''));
+            else if (addr.town) parts.push(addr.town);
+            if (addr.district) parts.push(addr.district);
+            else if (addr.suburb) parts.push(addr.suburb);
+            else if (addr.neighbourhood) parts.push(addr.neighbourhood);
+
+            const location = parts.length ? parts.slice(-2).join('') : (data.display_name || '').substring(0, 20);
+            $('#f_location').value = location;
+          } else {
+            $('#f_location').value = lat + ',' + lng;
+          }
+          btn.innerHTML = '✅ 已定位';
+          setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2000);
+        })
+        .catch(() => {
+          $('#f_location').value = lat + ',' + lng;
+          btn.innerHTML = '✅ 已定位';
+          setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2000);
+        });
+    },
+    function(err) {
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      let msg = '定位失败';
+      if (err.code === 1) msg = '定位被拒绝，请在浏览器设置中允许定位权限';
+      else if (err.code === 2) msg = '定位不可用，请手动输入位置';
+      else if (err.code === 3) msg = '定位超时，请重试或手动输入';
+      alert(msg);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
 }
 
 function searchFood() {
