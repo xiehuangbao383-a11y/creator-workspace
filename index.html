@@ -431,6 +431,115 @@
   .style-card .name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
   .style-card .desc { font-size: 10px; color: var(--text-light); line-height: 1.4; }
 
+  /* ===== 旅行规划 ===== */
+  .travel-form-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border);
+  }
+  .travel-form-card .section-title {
+    font-size: 15px; font-weight: 700; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .travel-form-card .hint {
+    font-size: 12px; color: var(--text-light); margin-bottom: 18px;
+  }
+
+  .travel-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .travel-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative;
+    transition: all .2s;
+  }
+  .travel-card:hover { box-shadow: var(--shadow-card); }
+  .travel-card .destination {
+    font-size: 17px; font-weight: 700; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .travel-card .meta-line {
+    font-size: 12px; color: var(--text-light); margin-bottom: 10px;
+    display: flex; flex-wrap: wrap; gap: 10px;
+  }
+  .travel-card .meta-line span {
+    background: var(--primary-soft); color: var(--primary-dark);
+    padding: 2px 10px; border-radius: 12px;
+  }
+  .travel-card .styles {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+  }
+  .travel-card .style-tag {
+    font-size: 11px; padding: 3px 10px;
+    border-radius: 12px; background: #fff5e0; color: #b8860b;
+  }
+  .travel-card .guide-preview {
+    font-size: 12px; color: var(--text); line-height: 1.6;
+    background: #fafdfb; border-radius: 10px; padding: 12px;
+    border: 1px solid var(--border);
+    max-height: 120px; overflow: hidden;
+  }
+  .travel-card .guide-preview.expanded { max-height: none; }
+  .travel-card .expand-btn {
+    font-size: 11px; color: var(--primary-dark); cursor: pointer;
+    margin-top: 6px; display: inline-block;
+  }
+
+  /* ===== 旅行攻略结果 ===== */
+  .guide-result {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border);
+    margin-top: 20px;
+  }
+  .guide-result h3 {
+    font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .guide-section {
+    margin-bottom: 14px;
+    padding-left: 12px;
+    border-left: 3px solid var(--primary-light);
+  }
+  .guide-section h4 {
+    font-size: 13px; font-weight: 700; color: var(--primary-dark); margin-bottom: 6px;
+  }
+  .guide-section p, .guide-section ul {
+    font-size: 13px; color: var(--text); line-height: 1.7;
+  }
+  .guide-section ul { padding-left: 16px; }
+  .guide-section li { margin-bottom: 4px; }
+
+  /* ===== 随笔记录 ===== */
+  .note-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .note-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative;
+    transition: all .2s;
+  }
+  .note-card:hover { box-shadow: var(--shadow-card); }
+  .note-card .note-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .note-card .note-content { font-size: 13px; color: var(--text-light); line-height: 1.6; white-space: pre-wrap; }
+  .note-card .note-date { font-size: 11px; color: var(--text-light); margin-top: 12px; }
+
   /* ===== 模态框 ===== */
   .modal-mask {
     display: none;
@@ -555,6 +664,16 @@
       <span class="nav-badge">HOT</span>
     </div>
   </div>
+
+  <div class="nav-section">
+    <div class="nav-title">生活板块</div>
+    <div class="nav-item" data-page="travel">
+      <div class="nav-icon">✈️</div><span>旅行规划</span>
+    </div>
+    <div class="nav-item" data-page="notes">
+      <div class="nav-icon">📝</div><span>随笔记录</span>
+    </div>
+  </div>
 </aside>
 
 <!-- 主内容 -->
@@ -640,6 +759,64 @@
       <div class="icon">📊</div>
       <p>还没有复盘记录，点击右上角添加</p>
     </div>
+  <!-- 旅行规划 -->
+  <section class="page" id="page-travel">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h1>✈️ 旅行规划</h1>
+        <p>输入目的地 · 选择风格 · 自动生成吃住行攻略</p>
+      </div>
+      <button class="btn-action" onclick="$('#t_dest').focus()">+ 新建旅行</button>
+    </div>
+
+    <div class="travel-form-card">
+      <div class="section-title">✨ 新建旅行攻略</div>
+      <p class="hint">填写信息 → 选择风格 → 提交后自动生成攻略</p>
+      <div class="form-grid">
+        <div class="form-row"><label>目的地 *</label><input id="t_dest" placeholder="如：成都 / 大理 / 大阪"></div>
+        <div class="form-row"><label>出发日期</label><input type="date" id="t_start"></div>
+        <div class="form-row"><label>结束日期</label><input type="date" id="t_end"></div>
+        <div class="form-row"><label>出行人数</label><input id="t_people" placeholder="如：2人 / 独自 / 家庭"></div>
+        <div class="form-row"><label>预算范围</label><input id="t_budget" placeholder="如：3000-5000 / 不限"></div>
+      </div>
+      <div style="margin-top:16px;">
+        <label style="font-size:12px;color:var(--text-light);font-weight:500;display:block;margin-bottom:10px;">🎯 选择旅行风格（可多选）</label>
+        <div class="style-options" id="travelStyles">
+          <div class="style-card" data-style="休闲游" onclick="toggleStyle(this)">
+            <div class="emoji">🌿</div><div class="name">休闲游</div><div class="desc">睡到自然醒<br>慢节奏深度体验</div>
+          </div>
+          <div class="style-card" data-style="特种兵" onclick="toggleStyle(this)">
+            <div class="emoji">⚡</div><div class="name">特种兵</div><div class="desc">极限打卡<br>一天当三天用</div>
+          </div>
+          <div class="style-card" data-style="吃货游" onclick="toggleStyle(this)">
+            <div class="emoji">🍜</div><div class="name">吃货游</div><div class="desc">以吃为路线<br>从早吃到晚</div>
+          </div>
+          <div class="style-card" data-style="拍照游" onclick="toggleStyle(this)">
+            <div class="emoji">📷</div><div class="name">拍照游</div><div class="desc">出片第一<br>每站都是大片</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-action" style="margin-top:20px;width:100%;justify-content:center;" onclick="submitTravelPlan()">📝 提交规划请求</button>
+    </div>
+
+    <div id="travelResult"></div>
+    <div id="travelList" class="travel-list"></div>
+  </section>
+
+  <!-- 随笔记录 -->
+  <section class="page" id="page-notes">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h1>📝 随笔记录</h1>
+        <p>随手记录生活点滴 · 想法与心情</p>
+      </div>
+      <button class="btn-action" onclick="openModal()">+ 写随笔</button>
+    </div>
+    <div id="noteList" class="note-list"></div>
+    <div class="empty-state" id="noteEmpty">
+      <div class="icon">📝</div>
+      <p>还没有随笔，点击右上角写下第一条</p>
+    </div>
   </section>
 
 </main>
@@ -657,6 +834,9 @@
   </div>
   <div class="bottom-item" data-page="review">
     <div class="icon">📊</div><span>复盘</span>
+  </div>
+  <div class="bottom-item" data-page="travel">
+    <div class="icon">🌿</div><span>生活</span>
   </div>
 </nav>
 
@@ -702,8 +882,8 @@ function switchPage(page) {
   document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
   $('#page-' + page).classList.add('active');
 
-  // FAB 只在非计划页显示
-  $('#fab').style.display = page === 'plan' ? 'none' : 'flex';
+  // FAB 在计划页和旅行页不显示（它们有自己的添加方式）
+  $('#fab').style.display = (page === 'plan' || page === 'travel') ? 'none' : 'flex';
 }
 
 document.querySelectorAll('.nav-item, .bottom-item').forEach(item => {
@@ -867,6 +1047,153 @@ function deleteReview(i) {
   const arr = loadReviews(); arr.splice(i,1); saveReviews(arr); renderReviews();
 }
 
+// ===== 随笔记录 =====
+function loadNotes() { return JSON.parse(localStorage.getItem('notes') || '[]'); }
+function saveNotes(arr) { localStorage.setItem('notes', JSON.stringify(arr)); }
+function renderNotes() {
+  const arr = loadNotes();
+  const list = $('#noteList');
+  list.innerHTML = '';
+  $('#noteEmpty').style.display = arr.length ? 'none' : 'block';
+  arr.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'note-card';
+    card.innerHTML = `
+      <button class="card-delete" onclick="deleteNote(${i})">✕</button>
+      <div class="note-title">${escapeHtml(item.title)}</div>
+      <div class="note-content">${escapeHtml(item.content)}</div>
+      <div class="note-date">${escapeHtml(item.date)}</div>
+    `;
+    list.appendChild(card);
+  });
+}
+function deleteNote(i) {
+  const arr = loadNotes(); arr.splice(i,1); saveNotes(arr); renderNotes();
+}
+
+// ===== 旅行规划 =====
+function loadTravels() { return JSON.parse(localStorage.getItem('travels') || '[]'); }
+function saveTravels(arr) { localStorage.setItem('travels', JSON.stringify(arr)); }
+
+function toggleStyle(el) {
+  el.classList.toggle('selected');
+}
+
+function getSelectedStyles() {
+  return Array.from(document.querySelectorAll('#travelStyles .style-card.selected')).map(el => el.dataset.style);
+}
+
+function generateTravelGuide(data) {
+  const { destination, styles, people, budget, days } = data;
+  const isFood = styles.includes('吃货游');
+  const isPhoto = styles.includes('拍照游');
+  const isSpecial = styles.includes('特种兵');
+  const isRelax = styles.includes('休闲游') || styles.length === 0;
+
+  let pace = isSpecial ? '节奏紧凑' : (isRelax ? '节奏舒缓' : '张弛有度');
+  let foodFocus = isFood ? '以美食探索为主线' : '兼顾当地特色美食';
+  let photoFocus = isPhoto ? '重点安排拍照出片打卡点' : '经典景点与特色体验结合';
+
+  return {
+    food: `推荐${destination}当地口碑美食${isFood ? '，从早市小吃到深夜食堂逐站打卡' : '，品尝3-5家特色餐厅'}。预算${budget || '按需'}，${people || '根据人数'}分享更划算。`,
+    stay: `选择${isRelax ? '舒适度高的民宿/酒店，位置便利' : '交通方便的酒店或青旅'}，建议住在市中心或地铁沿线，节省通勤时间。`,
+    spots: `${photoFocus}。${isSpecial ? '每日安排3-4个核心景点' : '每日安排2-3个重点景点'}，避免走马观花。`,
+    itinerary: `${destination}${days ? days + '日游' : '行程'}攻略：${pace}，${foodFocus}。第一天抵达安顿+周边轻松游；中间${isSpecial ? '全天高密度打卡' : '深度体验'}；最后一天采购伴手礼+返程。`,
+    tips: `提前查好天气，备好充电宝与舒适鞋子；热门餐厅建议错峰用餐；保留一定弹性时间应对突发情况。`
+  };
+}
+
+function submitTravelPlan() {
+  const destination = $('#t_dest').value.trim();
+  const start = $('#t_start').value;
+  const end = $('#t_end').value;
+  const people = $('#t_people').value.trim();
+  const budget = $('#t_budget').value.trim();
+  const styles = getSelectedStyles();
+
+  if (!destination) {
+    $('#t_dest').focus();
+    return;
+  }
+
+  let days = '';
+  if (start && end) {
+    const d1 = new Date(start), d2 = new Date(end);
+    const diff = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+    if (diff > 0) days = diff + '天';
+  }
+
+  const guide = generateTravelGuide({ destination, styles, people, budget, days });
+  const travelItem = {
+    destination, start, end, people, budget, styles, days, guide,
+    date: todayFull().split(' ')[0]
+  };
+
+  const arr = loadTravels();
+  arr.unshift(travelItem);
+  saveTravels(arr);
+
+  // 清空表单
+  $('#t_dest').value = '';
+  $('#t_start').value = '';
+  $('#t_end').value = '';
+  $('#t_people').value = '';
+  $('#t_budget').value = '';
+  document.querySelectorAll('#travelStyles .style-card').forEach(el => el.classList.remove('selected'));
+
+  renderTravels();
+  // 滚动到结果区
+  setTimeout(() => {
+    const first = $('#travelList .travel-card');
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+}
+
+function renderTravels() {
+  const arr = loadTravels();
+  const list = $('#travelList');
+  list.innerHTML = '';
+  if (arr.length === 0) {
+    list.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">✈️</div><p>还没有旅行计划，填写上方表单生成你的第一份攻略</p></div>`;
+    return;
+  }
+  arr.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'travel-card';
+    card.innerHTML = `
+      <button class="card-delete" onclick="deleteTravel(${i})">✕</button>
+      <div class="destination">📍 ${escapeHtml(item.destination)}</div>
+      <div class="meta-line">
+        ${item.days ? `<span>⏱ ${escapeHtml(item.days)}</span>` : ''}
+        ${item.start ? `<span>📅 ${escapeHtml(item.start)}${item.end ? ' ~ ' + escapeHtml(item.end) : ''}</span>` : ''}
+        ${item.people ? `<span>👥 ${escapeHtml(item.people)}</span>` : ''}
+        ${item.budget ? `<span>💰 ${escapeHtml(item.budget)}</span>` : ''}
+      </div>
+      <div class="styles">${(item.styles || []).map(s => `<span class="style-tag">${escapeHtml(s)}</span>`).join('')}</div>
+      <div class="guide-preview" id="guide-${i}">
+        <div class="guide-section"><h4>🍜 美食推荐</h4><p>${escapeHtml(item.guide.food)}</p></div>
+        <div class="guide-section"><h4>🏨 住宿建议</h4><p>${escapeHtml(item.guide.stay)}</p></div>
+        <div class="guide-section"><h4>📷 景点玩法</h4><p>${escapeHtml(item.guide.spots)}</p></div>
+        <div class="guide-section"><h4>🗓 行程建议</h4><p>${escapeHtml(item.guide.itinerary)}</p></div>
+        <div class="guide-section"><h4>💡 贴心提示</h4><p>${escapeHtml(item.guide.tips)}</p></div>
+      </div>
+      <span class="expand-btn" onclick="toggleGuide(${i})">展开完整攻略</span>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function toggleGuide(i) {
+  const el = $('#guide-' + i);
+  const btn = el.nextElementSibling;
+  el.classList.toggle('expanded');
+  btn.textContent = el.classList.contains('expanded') ? '收起攻略' : '展开完整攻略';
+}
+
+function deleteTravel(i) {
+  const arr = loadTravels(); arr.splice(i,1); saveTravels(arr); renderTravels();
+}
+
 // ===== 模态框 =====
 function openModal() {
   const body = $('#modalBody');
@@ -917,6 +1244,19 @@ function openModal() {
       arr.unshift({ title, good: $('#m_good').value.trim(), bad: $('#m_bad').value.trim(), action: $('#m_action').value.trim(), date: todayFull().split(' ')[0] });
       saveReviews(arr); renderReviews(); closeModal();
     };
+  } else if (currentPage === 'notes') {
+    title.textContent = '📝 写随笔';
+    body.innerHTML = `
+      <div class="form-row"><label>标题 *</label><input id="m_title" placeholder="随笔标题"></div>
+      <div class="form-row"><label>内容</label><textarea id="m_content" placeholder="记录当下的心情、想法或生活点滴..."></textarea></div>
+    `;
+    $('#modalSave').onclick = () => {
+      const title = $('#m_title').value.trim();
+      if (!title) return;
+      const arr = loadNotes();
+      arr.unshift({ title, content: $('#m_content').value.trim(), date: todayFull().split(' ')[0] });
+      saveNotes(arr); renderNotes(); closeModal();
+    };
   }
   $('#modalMask').classList.add('show');
 }
@@ -936,6 +1276,8 @@ renderTasks();
 renderIdeas();
 renderVideos();
 renderReviews();
+renderNotes();
+renderTravels();
 </script>
 </body>
 </html>
