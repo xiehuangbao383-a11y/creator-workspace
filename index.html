@@ -1111,7 +1111,8 @@ function generateTravelGuide(data) {
 function submitTravelPlan() {
   const destination = $('#t_dest').value.trim();
   const start = $('#t_start').value;
-  const end = $('#t_end').value;
+  const end = $('#t_end'.replace('"',''));
+  const endVal = document.getElementById('t_end').value;
   const people = $('#t_people').value.trim();
   const budget = $('#t_budget').value.trim();
   const styles = getSelectedStyles();
@@ -1122,36 +1123,62 @@ function submitTravelPlan() {
   }
 
   let days = '';
-  if (start && end) {
-    const d1 = new Date(start), d2 = new Date(end);
+  if (start && endVal) {
+    const d1 = new Date(start), d2 = new Date(endVal);
     const diff = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
     if (diff > 0) days = diff + '天';
   }
 
-  const guide = generateTravelGuide({ destination, styles, people, budget, days });
-  const travelItem = {
-    destination, start, end, people, budget, styles, days, guide,
-    date: todayFull().split(' ')[0]
-  };
+  // 显示加载中
+  const submitBtn = document.querySelector('button[onclick="submitTravelPlan()"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '⏳ AI 正在生成攻略...';
+  submitBtn.disabled = true;
 
-  const arr = loadTravels();
-  arr.unshift(travelItem);
-  saveTravels(arr);
+  // 调用 AI API 生成真实攻略
+  fetch('https://travel-guide.xiehuangbao383.workers.dev/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ destination, days, people, budget, styles })
+  })
+  .then(resp => resp.json())
+  .then(data => {
+    if (data.error) {
+      alert('生成失败：' + data.error);
+      return;
+    }
 
-  // 清空表单
-  $('#t_dest').value = '';
-  $('#t_start').value = '';
-  $('#t_end').value = '';
-  $('#t_people').value = '';
-  $('#t_budget').value = '';
-  document.querySelectorAll('#travelStyles .style-card').forEach(el => el.classList.remove('selected'));
+    const guide = { raw: data.guide.raw };
+    const travelItem = {
+      destination, start, end: endVal, people, budget, styles, days, guide,
+      date: todayFull().split(' ')[0]
+    };
 
-  renderTravels();
-  // 滚动到结果区
-  setTimeout(() => {
-    const first = $('#travelList .travel-card');
-    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 100);
+    const arr = loadTravels();
+    arr.unshift(travelItem);
+    saveTravels(arr);
+
+    // 清空表单
+    $('#t_dest').value = '';
+    document.getElementById('t_start').value = '';
+    document.getElementById('t_end').value = '';
+    $('#t_people').value = '';
+    $('#t_budget').value = '';
+    document.querySelectorAll('#travelStyles .style-card').forEach(el => el.classList.remove('selected'));
+
+    renderTravels();
+    setTimeout(() => {
+      const first = $('#travelList .travel-card');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  })
+  .catch(err => {
+    alert('网络错误，请重试：' + err.message);
+  })
+  .finally(() => {
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+  });
 }
 
 function renderTravels() {
@@ -1176,11 +1203,7 @@ function renderTravels() {
       </div>
       <div class="styles">${(item.styles || []).map(s => `<span class="style-tag">${escapeHtml(s)}</span>`).join('')}</div>
       <div class="guide-preview" id="guide-${i}">
-        <div class="guide-section"><h4>🍜 美食推荐</h4><p>${escapeHtml(item.guide.food)}</p></div>
-        <div class="guide-section"><h4>🏨 住宿建议</h4><p>${escapeHtml(item.guide.stay)}</p></div>
-        <div class="guide-section"><h4>📷 景点玩法</h4><p>${escapeHtml(item.guide.spots)}</p></div>
-        <div class="guide-section"><h4>🗓 行程建议</h4><p>${escapeHtml(item.guide.itinerary)}</p></div>
-        <div class="guide-section"><h4>💡 贴心提示</h4><p>${escapeHtml(item.guide.tips)}</p></div>
+        <div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:var(--text);">${escapeHtml(item.guide.raw)}</div>
       </div>
       <span class="expand-btn" onclick="toggleGuide(${i})">展开完整攻略</span>
     `;
