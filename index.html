@@ -852,6 +852,7 @@
       <div class="section-title">✨ 新建旅行攻略</div>
       <p class="hint">填写信息 → 选择风格 → 提交后自动生成攻略</p>
       <div class="form-grid">
+        <div class="form-row"><label>出发地 *</label><input id="t_origin" placeholder="如：广州 / 北京 / 上海"></div>
         <div class="form-row"><label>目的地 *</label><input id="t_dest" placeholder="如：成都 / 大理 / 大阪"></div>
         <div class="form-row"><label>出发日期</label><input type="date" id="t_start"></div>
         <div class="form-row"><label>结束日期</label><input type="date" id="t_end"></div>
@@ -1192,6 +1193,7 @@ function generateTravelGuide(data) {
 
 function submitTravelPlan() {
   const destination = $('#t_dest').value.trim();
+  const origin = $('#t_origin').value.trim();
   const start = document.getElementById('t_start').value;
   const endVal = document.getElementById('t_end').value;
   const people = $('#t_people').value.trim();
@@ -1218,7 +1220,8 @@ function submitTravelPlan() {
 
   // 生成提示语
   const styleText = styles.length ? `（${styles.join('/')}风格）` : '';
-  const promptMsg = `帮我规划「${destination}」${dateRange}旅行攻略${styleText}${people ? '，' + people : ''}${budget ? '，预算' + budget : ''}`;
+  const originText = origin ? `从${origin}出发` : '';
+  const promptMsg = `帮我规划${originText}「${destination}」${dateRange}旅行攻略${styleText}${people ? '，' + people : ''}${budget ? '，预算' + budget : ''}，需要包含最佳行程推荐和${origin ? origin + '→' + destination + '的' : ''}机票预估价格`;
 
   // 显示金色提示卡
   $('#promptText').textContent = promptMsg;
@@ -1233,7 +1236,7 @@ function submitTravelPlan() {
   fetch('https://travel-guide.xiehuangbao383.workers.dev/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ destination, days, people, budget, styles })
+    body: JSON.stringify({ destination, origin, days, people, budget, styles })
   })
   .then(resp => resp.json())
   .then(data => {
@@ -1246,7 +1249,7 @@ function submitTravelPlan() {
   .then(guideText => {
     if (guideText) {
       const travelItem = {
-        destination, start, end: endVal, people, budget, styles, days, dateRange,
+        destination, origin, start, end: endVal, people, budget, styles, days, dateRange,
         guide: { raw: guideText, type: 'ai' },
         date: todayFull().split(' ')[0]
       };
@@ -1295,6 +1298,7 @@ function copyPrompt() {
 }
 
 function clearTravelForm() {
+  $('#t_origin').value = '';
   $('#t_dest').value = '';
   document.getElementById('t_start').value = '';
   document.getElementById('t_end').value = '';
@@ -1317,7 +1321,7 @@ function renderTravels() {
     const guideContent = item.guide.raw;
     card.innerHTML = `
       <button class="card-delete" onclick="deleteTravel(${i})">✕</button>
-      <div class="destination">📍 ${escapeHtml(item.destination)}</div>
+      <div class="destination">📍 ${escapeHtml(item.origin ? item.origin + ' → ' : '')}${escapeHtml(item.destination)}</div>
       <div class="meta-line">
         ${item.days ? `<span>⏱ ${escapeHtml(item.days)}</span>` : ''}
         ${item.dateRange ? `<span>📅 ${escapeHtml(item.dateRange)}</span>` : ''}
