@@ -1358,18 +1358,25 @@ function searchFood() {
   // 显示 loading
   $('#foodResult').innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>正在为你搜索附近美食，请稍候...</p></div>';
 
-  fetch('https://travel-guide.xiehuangbao383.workers.dev/', {
+  // 直接调用 DeepSeek API（绕过 Cloudflare Worker，避免国内网络不通）
+  const dsKey = 'sk-ff3c8d7ed46f466991e94c11f7badc22';
+  const foodPrompt = `作为美食推荐官，请为以下需求推荐美食：\n\n位置：${location}\n菜系/关键词：${cuisine || '不限'}\n\n请按以下格式输出（中文，真实实用）：\n\n🍽️ 推荐餐厅/美食\n推荐5-8家${location}附近的${cuisine || '当地'}餐厅或美食，每条包含：\n- 餐厅/美食名称\n- 推荐菜（2-3道招牌）\n- 人均价格\n- 位置/区域\n- 一句话推荐理由\n\n💡 点餐建议\n（怎么点最划算、有什么搭配推荐）\n\n🚶 周边逛吃路线\n（吃完可以去哪逛，附近还有什么好吃的）\n\n要求：信息真实，基于实际餐厅和美食。如果不确定具体餐厅，推荐该区域常见的优质选择并说明。`;
+
+  fetch('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + dsKey
+    },
     body: JSON.stringify({
-      destination: location,
-      origin: '',
-      days: '',
-      people: '',
-      budget: '',
-      styles: [],
-      mode: 'food',
-      cuisine: cuisine
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: '你是专业美食推荐官，对中国各地美食和餐厅了如指掌。提供真实、实用的美食推荐。' },
+        { role: 'user', content: foodPrompt }
+      ],
+      max_tokens: 2000,
+      temperature: 0.7,
+      stream: false
     })
   })
   .then(resp => {
@@ -1379,11 +1386,7 @@ function searchFood() {
     return resp.json();
   })
   .then(data => {
-    if (data.error) {
-      $('#foodResult').innerHTML = `<div class="empty-state"><div class="icon">😢</div><p>搜索失败：${escapeHtml(data.error)}</p><button class="btn btn-primary" style="margin-top:12px;" onclick="searchFood()">重新搜索</button></div>`;
-      return;
-    }
-    const guide = data.guide.raw;
+    const guide = data.choices[0].message.content;
     const foodItem = {
       location, cuisine,
       content: guide,
@@ -1548,21 +1551,60 @@ function submitTravelPlan() {
   submitBtn.innerHTML = '⏳ AI 正在生成攻略...';
   submitBtn.disabled = true;
 
-  fetch('https://travel-guide.xiehuangbao383.workers.dev/', {
+  // 直接调用 DeepSeek API（绕过 Cloudflare Worker，避免国内网络不通）
+  const dsKey = 'sk-ff3c8d7ed46f466991e94c11f7badc22';
+  const styleText2 = styles.length ? styles.join('、') : '休闲游';
+  const daysText = days || '3天';
+  const peopleText = people || '2人';
+  const budgetText = budget || '适中';
+
+  let travelPrompt = '作为专业旅行规划师，为以下行程生成详细攻略：\n';
+  if (origin) travelPrompt += '出发地：' + origin + '\n';
+  travelPrompt += '目的地：' + destination + '\n';
+  travelPrompt += '天数：' + daysText + '\n';
+  travelPrompt += '人数：' + peopleText + '\n';
+  travelPrompt += '预算：' + budgetText + '\n';
+  travelPrompt += '风格：' + styleText2 + '\n\n';
+  travelPrompt += '请按以下格式输出（中文，真实实用，简洁明了）：\n\n';
+  travelPrompt += '🌤️ 概览\n（天气、穿衣建议、安全提示）\n\n';
+  if (origin) {
+    travelPrompt += '✈️ 交通与机票预估\n';
+    travelPrompt += '【到达方式】从' + origin + '到' + destination + '的最佳交通方式（飞机/高铁/自驾），附大致时间和价格\n';
+    travelPrompt += '【机票预估】' + origin + '→' + destination + '往返机票参考价格（经济舱含税费，给出区间）\n';
+    travelPrompt += '【市内交通】目的地市内交通建议\n\n';
+  } else {
+    travelPrompt += '🚗 交通出行\n（到达方式+市内交通）\n\n';
+  }
+  travelPrompt += '🏨 住宿建议\n（推荐2-3个住宿区域，附价格和优缺点）\n\n';
+  travelPrompt += '🍜 必吃美食\n（推荐5-6个必吃美食，附店名/位置/人均价格）\n\n';
+  travelPrompt += '📍 最佳行程推荐\n（按天安排行程，每天3-4个景点+用餐建议，合理规划路线）\n\n';
+  travelPrompt += '💰 预算预估\n（分类汇总：交通/住宿/餐饮/门票/其他，给出总价范围）\n\n';
+  travelPrompt += '💡 贴心提示\n（5-8条实用注意事项）\n\n';
+  travelPrompt += '要求：信息真实准确，基于实际地理和旅游信息。机票价格给出合理区间。';
+
+  fetch('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ destination, origin, days, people, budget, styles })
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + dsKey
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: '你是专业旅行规划师和美食推荐官，提供真实、详细、实用的信息。' },
+        { role: 'user', content: travelPrompt }
+      ],
+      max_tokens: 2000,
+      temperature: 0.7,
+      stream: false
+    })
   })
   .then(resp => {
     if (!resp.ok) return resp.text().then(t => { throw new Error('HTTP ' + resp.status); });
     return resp.json();
   })
   .then(data => {
-    if (data.error) {
-      console.log('AI error:', data.error);
-      return null;
-    }
-    return data.guide.raw;
+    return data.choices[0].message.content;
   })
   .then(guideText => {
     if (guideText) {
