@@ -517,6 +517,79 @@
   .travel-actions .btn-del:hover { border-color: var(--danger); background: #fff0f0; color: var(--danger); }
   .travel-actions .btn-share:hover { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-dark); }
 
+  /* 菜系标签 */
+  .cuisine-tag {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-light);
+    cursor: pointer;
+    background: #fff;
+    transition: all .2s;
+  }
+  .cuisine-tag:hover { border-color: var(--primary-light); color: var(--primary-dark); }
+  .cuisine-tag.selected {
+    background: var(--primary-soft);
+    border-color: var(--primary);
+    color: var(--primary-dark);
+    font-weight: 600;
+  }
+
+  /* 美食推荐结果卡片 */
+  .food-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .food-card h4 {
+    font-size: 16px; font-weight: 700; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .food-card .food-content {
+    white-space: pre-wrap;
+    font-size: 13px; line-height: 1.8; color: var(--text);
+  }
+  .food-card .food-meta {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-light);
+    display: flex; gap: 10px; align-items: center;
+  }
+  .food-card .travel-actions {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 10px;
+  }
+  .food-card .travel-actions button {
+    flex: 1; padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+
+  .loading-spinner {
+    text-align: center; padding: 40px;
+    color: var(--text-light);
+  }
+  .loading-spinner .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   /* ===== 旅行攻略结果 ===== */
   .guide-result {
     background: var(--card);
@@ -767,6 +840,9 @@
     <div class="nav-item" data-page="travel">
       <div class="nav-icon">✈️</div><span>旅行规划</span>
     </div>
+    <div class="nav-item" data-page="food">
+      <div class="nav-icon">🍜</div><span>美食推荐</span>
+    </div>
     <div class="nav-item" data-page="notes">
       <div class="nav-icon">📝</div><span>随笔记录</span>
     </div>
@@ -927,6 +1003,44 @@
     </div>
   </section>
 
+  <!-- 美食推荐 -->
+  <section class="page" id="page-food">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h1>🍜 美食推荐</h1>
+        <p>不知道吃什么？输入菜系或位置，AI 帮你推荐附近美食</p>
+      </div>
+    </div>
+
+    <div class="travel-form-card">
+      <div class="section-title">🔍 搜索美食</div>
+      <p class="hint">输入你所在的位置 + 想吃的菜系，AI 为你推荐</p>
+      <div class="form-grid">
+        <div class="form-row"><label>你的位置 *</label><input id="f_location" placeholder="如：广州天河 / 成都春熙路 / 上海静安"></div>
+        <div class="form-row"><label>菜系 / 关键词</label><input id="f_cuisine" placeholder="如：粤菜 / 火锅 / 日料 / 不限"></div>
+      </div>
+      <div style="margin-top:16px;">
+        <label style="font-size:12px;color:var(--text-light);font-weight:500;display:block;margin-bottom:10px;">🍳 快选菜系</label>
+        <div class="cuisine-tags" id="cuisineTags" style="display:flex;flex-wrap:wrap;gap:8px;">
+          <span class="cuisine-tag" onclick="selectCuisine(this)">🔥 火锅</span>
+          <span class="cuisine-tag" onclick="selectCuisine(this)">🍜 粤菜</span>
+          <span class="cuisine-tag" onclick="selectCuisine(this)">🌶 川菜</span>
+          <span class="cuisine-tag" onclick="selectCuisine(this)">🍣 日料</span>
+          <span class="cuisine-tag" onclick="selectCuisine(this)">🥘 湘菜</span>
+          <span class="cuisine-tag" onclick="selectCuisine(this)">🥟 江浙菜</span>
+          <span class="cuisine-tag" onclick="selectCuisine(this)">🍖 烧烤</span>
+          <span class="cuisine-tag" onclick="selectCuisine(this)">🥗 轻食</span>
+          <span class="cuisine-tag" onclick="selectCuisine(this)">🍜 面食</span>
+          <span class="cuisine-tag" onclick="selectCuisine(this)">甜品🍰</span>
+        </div>
+      </div>
+      <button class="btn-action" style="margin-top:20px;width:100%;justify-content:center;" onclick="searchFood()">🔍 推荐美食</button>
+    </div>
+
+    <div id="foodResult"></div>
+    <div id="foodHistory"></div>
+  </section>
+
 </main>
 
 <!-- 底部导航 -->
@@ -936,6 +1050,9 @@
   </div>
   <div class="bottom-item" data-page="travel">
     <div class="icon">✈️</div><span>旅行</span>
+  </div>
+  <div class="bottom-item" data-page="food">
+    <div class="icon">🍜</div><span>美食</span>
   </div>
 </nav>
 
@@ -981,8 +1098,8 @@ function switchPage(page) {
   document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
   $('#page-' + page).classList.add('active');
 
-  // FAB 在计划页和旅行页不显示（它们有自己的添加方式）
-  $('#fab').style.display = (page === 'plan' || page === 'travel') ? 'none' : 'flex';
+  // FAB 在计划页、旅行页、美食页不显示
+  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food') ? 'none' : 'flex';
 }
 
 document.querySelectorAll('.nav-item, .bottom-item').forEach(item => {
@@ -1144,6 +1261,120 @@ function renderReviews() {
 }
 function deleteReview(i) {
   const arr = loadReviews(); arr.splice(i,1); saveReviews(arr); renderReviews();
+}
+
+// ===== 美食推荐 =====
+function loadFoods() { return JSON.parse(localStorage.getItem('foods') || '[]'); }
+function saveFoods(arr) { localStorage.setItem('foods', JSON.stringify(arr)); }
+
+function selectCuisine(el) {
+  el.classList.toggle('selected');
+  // 同步到输入框
+  const selected = Array.from(document.querySelectorAll('#cuisineTags .cuisine-tag.selected')).map(t => t.textContent.replace(/^[^\u4e00-\u9fa5a-zA-Z]+\s*/, ''));
+  $('#f_cuisine').value = selected.join('、');
+}
+
+function searchFood() {
+  const location = $('#f_location').value.trim();
+  const cuisine = $('#f_cuisine').value.trim();
+
+  if (!location) {
+    $('#f_location').focus();
+    return;
+  }
+
+  const btn = document.querySelector('button[onclick="searchFood()"]');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '⏳ 搜索中...';
+  btn.disabled = true;
+
+  // 显示 loading
+  $('#foodResult').innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>正在为你搜索附近美食，请稍候...</p></div>';
+
+  fetch('https://travel-guide.xiehuangbao383.workers.dev/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      destination: location,
+      origin: '',
+      days: '',
+      people: '',
+      budget: '',
+      styles: [],
+      mode: 'food',
+      cuisine: cuisine
+    })
+  })
+  .then(resp => resp.json())
+  .then(data => {
+    if (data.error) {
+      $('#foodResult').innerHTML = `<div class="empty-state"><div class="icon">😢</div><p>搜索失败：${escapeHtml(data.error)}</p></div>`;
+      return;
+    }
+    const guide = data.guide.raw;
+    const foodItem = {
+      location, cuisine,
+      content: guide,
+      date: todayFull().split(' ')[0]
+    };
+    const arr = loadFoods();
+    arr.unshift(foodItem);
+    saveFoods(arr);
+    renderFoods();
+    // 清空表单
+    $('#f_location').value = '';
+    $('#f_cuisine').value = '';
+    document.querySelectorAll('#cuisineTags .cuisine-tag').forEach(el => el.classList.remove('selected'));
+  })
+  .catch(err => {
+    $('#foodResult').innerHTML = `<div class="empty-state"><div class="icon">😢</div><p>网络错误，请重试</p></div>`;
+  })
+  .finally(() => {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+  });
+}
+
+function renderFoods() {
+  const arr = loadFoods();
+  const result = $('#foodResult');
+  if (arr.length === 0) {
+    result.innerHTML = '';
+    return;
+  }
+  result.innerHTML = '';
+  arr.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'food-card';
+    card.innerHTML = `
+      <button class="card-delete" onclick="deleteFood(${i})">✕</button>
+      <h4>🍜 ${escapeHtml(item.location)}${item.cuisine ? ' · ' + escapeHtml(item.cuisine) : ''}</h4>
+      <div class="food-content">${escapeHtml(item.content)}</div>
+      <div class="food-meta">
+        <span>🕐 ${escapeHtml(item.date)}</span>
+      </div>
+      <div class="travel-actions">
+        <button class="btn-fav" onclick="shareFood(${i})">📤 分享</button>
+        <button class="btn-del" onclick="deleteFood(${i})">🗑 删除</button>
+      </div>
+    `;
+    result.appendChild(card);
+  });
+}
+
+function deleteFood(i) {
+  const arr = loadFoods(); arr.splice(i,1); saveFoods(arr); renderFoods();
+}
+
+function shareFood(i) {
+  const arr = loadFoods();
+  const item = arr[i];
+  const text = `🍜 ${item.location}${item.cuisine ? ' · ' + item.cuisine : ''}\n\n${item.content}`;
+  if (navigator.share) {
+    navigator.share({ title: '美食推荐', text: text });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => alert('已复制到剪贴板'));
+  }
 }
 
 // ===== 随笔记录 =====
@@ -1480,6 +1711,7 @@ renderIdeas();
 renderVideos();
 renderReviews();
 renderNotes();
+renderFoods();
 
 // 注入大理攻略（如果用户没有旅行数据）
 (function() {
