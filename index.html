@@ -834,11 +834,11 @@
   <div class="bottom-item" data-page="video">
     <div class="icon">🔥</div><span>热点</span>
   </div>
-  <div class="bottom-item" data-page="review">
-    <div class="icon">📊</div><span>复盘</span>
-  </div>
   <div class="bottom-item" data-page="travel">
-    <div class="icon">🌿</div><span>生活</span>
+    <div class="icon">✈️</div><span>旅行</span>
+  </div>
+  <div class="bottom-item" data-page="notes">
+    <div class="icon">📝</div><span>随笔</span>
   </div>
 </nav>
 
@@ -1280,6 +1280,10 @@ renderVideos();
 renderReviews();
 renderNotes();
 renderTravels();
+
+// 调试：确认所有页面存在
+console.log('页面初始化完成，已注册页面:', 
+  Array.from(document.querySelectorAll('.page')).map(p => p.id).join(', '));
 </script>
 </body>
 </html>
