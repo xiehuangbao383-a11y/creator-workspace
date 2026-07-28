@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的创作工作台</title>
+<style>
+  :root {
+    --bg: #f5f6fa;
+    --sidebar: #ffffff;
+    --card: #ffffff;
+    --primary: #6c5ce7;
+    --primary-light: #a29bfe;
+    --primary-soft: #f0edff;
+    --text: #2d3436;
+    --text-light: #636e72;
+    --border: #e9ecf0;
+    --success: #00b894;
+    --danger: #ff7675;
+    --warning: #fdcb6e;
+    --shadow: 0 4px 20px rgba(0,0,0,0.06);
+    --radius: 14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    width: 240px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: fixed;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 20px; font-weight: 700;
+  }
+  .logo-text { font-size: 16px; font-weight: 700; }
+  .logo-text small { display:block; font-size:11px; color:var(--text-light); font-weight:400; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--text-light);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    transition: all .2s;
+  }
+  .nav-item:hover { background: var(--primary-soft); color: var(--primary); }
+  .nav-item.active {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(108,92,231,0.3);
+  }
+  .nav-icon { font-size: 18px; width: 22px; text-align: center; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 8px 0;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-light);
+  }
+  #todayDate { font-weight:600; color:var(--text); }
+
+  /* ===== 主内容 ===== */
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    padding: 32px 40px;
+    max-width: 100%;
+  }
+  .page { display: none; }
+  .page.active { display: block; animation: fade .3s; }
+  @keyframes fade { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+  .page-sub { color: var(--text-light); font-size: 14px; }
+
+  /* ===== 卡片 ===== */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 16px; font-weight: 600; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ===== 任务列表 ===== */
+  .task-progress-bar {
+    height: 8px; background: var(--border); border-radius: 4px;
+    overflow: hidden; margin-bottom: 16px;
+  }
+  .task-progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--primary), var(--success));
+    border-radius: 4px; transition: width .4s;
+  }
+  .task-stats {
+    display: flex; gap: 20px; margin-bottom: 16px;
+    font-size: 13px; color: var(--text-light);
+  }
+  .task-stats span b { color: var(--primary); font-size: 16px; }
+
+  .task-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: all .2s;
+  }
+  .task-item:hover { border-color: var(--primary-light); }
+  .task-item.done { background: #f8f9fb; }
+  .task-item.done .task-name { text-decoration: line-through; color: var(--text-light); }
+
+  .checkbox {
+    width: 22px; height: 22px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all .2s;
+  }
+  .checkbox.checked {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+  }
+  .checkbox.checked::after { content: "✓"; font-size: 14px; font-weight: 700; }
+
+  .task-name { flex: 1; font-size: 14px; }
+  .task-time {
+    font-size: 12px; color: var(--text-light);
+    background: var(--primary-soft);
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .task-delete {
+    width: 28px; height: 28px;
+    border: none; background: transparent;
+    color: var(--text-light);
+    cursor: pointer; border-radius: 6px;
+    font-size: 16px;
+    opacity: 0; transition: all .2s;
+  }
+  .task-item:hover .task-delete { opacity: 1; }
+  .task-delete:hover { background: #ffeaea; color: var(--danger); }
+
+  .add-task-row {
+    display: flex; gap: 8px; margin-top: 12px;
+  }
+  .add-task-row input {
+    flex: 1; padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px; font-size: 14px;
+    outline: none; transition: border .2s;
+  }
+  .add-task-row input:focus { border-color: var(--primary); }
+  .add-task-row input.time-input { flex: 0 0 120px; }
+  .btn {
+    padding: 10px 18px;
+    border: none; border-radius: 10px;
+    cursor: pointer; font-size: 14px; font-weight: 500;
+    transition: all .2s;
+  }
+  .btn-primary {
+    background: var(--primary); color: #fff;
+  }
+  .btn-primary:hover { background: #5a4bd1; }
+  .btn-soft {
+    background: var(--primary-soft); color: var(--primary);
+  }
+  .btn-soft:hover { background: #e4deff; }
+
+  /* ===== 灵感卡片网格 ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .idea-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    border-left: 4px solid var(--primary);
+    transition: transform .2s;
+  }
+  .idea-card:hover { transform: translateY(-3px); }
+  .idea-card .tag {
+    display: inline-block;
+    font-size: 11px; padding: 3px 10px;
+    background: var(--primary-soft); color: var(--primary);
+    border-radius: 20px; margin-bottom: 10px;
+  }
+  .idea-card h4 { font-size: 15px; margin-bottom: 8px; }
+  .idea-card p { font-size: 13px; color: var(--text-light); line-height: 1.6; }
+  .idea-card .meta {
+    margin-top: 12px; font-size: 11px; color: var(--text-light);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .card-delete {
+    position: absolute; top: 12px; right: 12px;
+    width: 24px; height: 24px;
+    border: none; background: transparent;
+    color: var(--text-light); cursor: pointer;
+    border-radius: 6px; font-size: 14px;
+    opacity: 0; transition: all .2s;
+  }
+  .idea-card:hover .card-delete { opacity: 1; }
+  .card-delete:hover { background: #ffeaea; color: var(--danger); }
+
+  /* ===== 表单 ===== */
+  .form-row { margin-bottom: 12px; }
+  .form-row label {
+    display: block; font-size: 13px; color: var(--text-light);
+    margin-bottom: 6px;
+  }
+  .form-row input, .form-row textarea, .form-row select {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px; font-size: 14px;
+    outline: none; font-family: inherit;
+    transition: border .2s;
+  }
+  .form-row input:focus, .form-row textarea:focus { border-color: var(--primary); }
+  .form-row textarea { resize: vertical; min-height: 70px; }
+
+  /* ===== 视频卡片 ===== */
+  .video-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--warning);
+    position: relative;
+  }
+  .video-card h4 { font-size: 15px; margin-bottom: 6px; }
+  .video-card .url {
+    font-size: 12px; color: var(--primary);
+    word-break: break-all; margin-bottom: 8px;
+    text-decoration: none;
+  }
+  .video-card .url:hover { text-decoration: underline; }
+  .video-card .desc { font-size: 13px; color: var(--text-light); line-height: 1.5; }
+  .video-card .meta {
+    margin-top: 10px; font-size: 11px; color: var(--text-light);
+    display: flex; gap: 12px;
+  }
+  .video-card .meta .badge {
+    padding: 2px 8px; border-radius: 12px;
+    background: #fff5e0; color: #b8860b;
+  }
+
+  /* ===== 复盘卡片 ===== */
+  .review-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    border-left: 4px solid var(--success);
+    position: relative;
+  }
+  .review-card h4 { font-size: 15px; margin-bottom: 10px; }
+  .review-card .review-section { margin-bottom: 10px; }
+  .review-card .review-label {
+    font-size: 12px; font-weight: 600; color: var(--primary);
+    margin-bottom: 4px;
+  }
+  .review-card .review-content { font-size: 13px; color: var(--text); line-height: 1.6; }
+  .review-card .meta { font-size: 11px; color: var(--text-light); margin-top: 8px; }
+
+  .empty-state {
+    text-align: center; padding: 48px 20px;
+    color: var(--text-light);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: .4; }
+
+  .add-btn-floating {
+    position: fixed; bottom: 32px; right: 32px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: #fff; border: none;
+    font-size: 28px; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(108,92,231,0.4);
+    z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .2s;
+  }
+  .add-btn-floating:hover { transform: scale(1.1); }
+
+  /* 模态框 */
+  .modal-mask {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 28px;
+    width: 90%; max-width: 480px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 18px; margin-bottom: 20px; }
+  .modal-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 20px;
+  }
+  .btn-cancel {
+    background: var(--border); color: var(--text-light);
+  }
+  .btn-cancel:hover { background: #dfe3e8; }
+
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .sidebar { width: 60px; padding: 16px 8px; }
+    .logo-text, .nav-item span:not(.nav-icon) { display: none; }
+    .main { margin-left: 60px; padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 侧边栏 -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">✦</div>
+    <div class="logo-text">创作工作台<small>Creator Workspace</small></div>
+  </div>
+  <nav>
+    <div class="nav-item active" data-page="plan">
+      <span class="nav-icon">📋</span><span>每日计划</span>
+    </div>
+    <div class="nav-item" data-page="idea">
+      <span class="nav-icon">💡</span><span>选题每日灵感</span>
+    </div>
+    <div class="nav-item" data-page="video">
+      <span class="nav-icon">🔥</span><span>爆款热点/二创</span>
+    </div>
+    <div class="nav-item" data-page="review">
+      <span class="nav-icon">📊</span><span>内容复盘</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    📅 <span id="todayDate"></span>
+  </div>
+</aside>
+
+<!-- 主内容 -->
+<main class="main">
+
+  <!-- 每日计划 -->
+  <section class="page active" id="page-plan">
+    <div class="page-header">
+      <h1 class="page-title">📋 每日计划</h1>
+      <p class="page-sub">今日任务完成情况，打勾即完成。坚持每天进步一点点 ✨</p>
+    </div>
+    <div class="card">
+      <div class="card-title">今日任务</div>
+      <div class="task-stats">
+        <span>已完成 <b id="doneCount">0</b></span>
+        <span>总任务 <b id="totalCount">0</b></span>
+        <span>完成率 <b id="rate">0%</b></span>
+      </div>
+      <div class="task-progress-bar"><div class="task-progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div id="taskList"></div>
+      <div class="add-task-row">
+        <input type="text" id="newTaskName" placeholder="新任务名称...">
+        <input type="text" class="time-input" id="newTaskTime" placeholder="时长/备注">
+        <button class="btn btn-primary" onclick="addTask()">+ 添加</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 选题灵感 -->
+  <section class="page" id="page-idea">
+    <div class="page-header">
+      <h1 class="page-title">💡 选题每日灵感</h1>
+      <p class="page-sub">记录闪现的创作灵感，别让好点子溜走</p>
+    </div>
+    <div id="ideaList" class="grid"></div>
+    <div class="empty-state" id="ideaEmpty">
+      <div class="icon">💡</div>
+      <p>还没有灵感记录，点击右下角 + 添加第一条灵感</p>
+    </div>
+  </section>
+
+  <!-- 爆款热点 -->
+  <section class="page" id="page-video">
+    <div class="page-header">
+      <h1 class="page-title">🔥 爆款热点视频 / 二创</h1>
+      <p class="page-sub">收藏爆款视频，记录二创思路和角度</p>
+    </div>
+    <div id="videoList" class="grid"></div>
+    <div class="empty-state" id="videoEmpty">
+      <div class="icon">🔥</div>
+      <p>还没有收藏视频，点击右下角 + 添加</p>
+    </div>
+  </section>
+
+  <!-- 内容复盘 -->
+  <section class="page" id="page-review">
+    <div class="page-header">
+      <h1 class="page-title">📊 内容复盘</h1>
+      <p class="page-sub">复盘已发布内容，总结经验持续优化</p>
+    </div>
+    <div id="reviewList"></div>
+    <div class="empty-state" id="reviewEmpty">
+      <div class="icon">📊</div>
+      <p>还没有复盘记录，点击右下角 + 添加</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- 浮动添加按钮 -->
+<button class="add-btn-floating" id="fab" onclick="openModal()" style="display:none">+</button>
+
+<!-- 模态框 -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <h3 id="modalTitle">新增</h3>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" id="modalSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== 工具函数 =====
+const $ = s => document.querySelector(s);
+const todayStr = () => new Date().toLocaleDateString('zh-CN').replace(/\//g,'-');
+const todayFull = () => {
+  const d = new Date();
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+};
+$('#todayDate').textContent = todayFull();
+
+// ===== 导航切换 =====
+let currentPage = 'plan';
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    item.classList.add('active');
+    const page = item.dataset.page;
+    currentPage = page;
+    $('#page-' + page).classList.add('active');
+    // FAB 只在非计划页显示
+    $('#fab').style.display = page === 'plan' ? 'none' : 'flex';
+  });
+});
+
+// ===== 每日任务 =====
+const DEFAULT_TASKS = [
+  { name: '运动30分钟', time: '30分钟', done: false },
+  { name: '英语练习30分钟', time: '30分钟', done: false }
+];
+
+function getTaskKey() { return 'tasks_' + todayStr(); }
+
+function loadTasks() {
+  let data = localStorage.getItem(getTaskKey());
+  if (!data) {
+    // 检查是否是首次使用今天
+    data = JSON.stringify(DEFAULT_TASKS);
+    localStorage.setItem(getTaskKey(), data);
+  }
+  return JSON.parse(data);
+}
+
+function saveTasks(tasks) {
+  localStorage.setItem(getTaskKey(), JSON.stringify(tasks));
+}
+
+function renderTasks() {
+  const tasks = loadTasks();
+  const list = $('#taskList');
+  list.innerHTML = '';
+  let done = 0;
+  tasks.forEach((t, i) => {
+    if (t.done) done++;
+    const div = document.createElement('div');
+    div.className = 'task-item' + (t.done ? ' done' : '');
+    div.innerHTML = `
+      <div class="checkbox ${t.done?'checked':''}" onclick="toggleTask(${i})"></div>
+      <span class="task-name">${escapeHtml(t.name)}</span>
+      ${t.time ? `<span class="task-time">${escapeHtml(t.time)}</span>` : ''}
+      <button class="task-delete" onclick="deleteTask(${i})">✕</button>
+    `;
+    list.appendChild(div);
+  });
+  $('#doneCount').textContent = done;
+  $('#totalCount').textContent = tasks.length;
+  const rate = tasks.length ? Math.round(done/tasks.length*100) : 0;
+  $('#rate').textContent = rate + '%';
+  $('#progressFill').style.width = rate + '%';
+}
+
+function toggleTask(i) {
+  const tasks = loadTasks();
+  tasks[i].done = !tasks[i].done;
+  saveTasks(tasks);
+  renderTasks();
+}
+
+function deleteTask(i) {
+  const tasks = loadTasks();
+  tasks.splice(i, 1);
+  saveTasks(tasks);
+  renderTasks();
+}
+
+function addTask() {
+  const name = $('#newTaskName').value.trim();
+  const time = $('#newTaskTime').value.trim();
+  if (!name) return;
+  const tasks = loadTasks();
+  tasks.push({ name, time, done: false });
+  saveTasks(tasks);
+  $('#newTaskName').value = '';
+  $('#newTaskTime').value = '';
+  renderTasks();
+}
+
+// 回车添加
+$('#newTaskName').addEventListener('keydown', e => { if(e.key==='Enter') addTask(); });
+$('#newTaskTime').addEventListener('keydown', e => { if(e.key==='Enter') addTask(); });
+
+// ===== 灵感记录 =====
+function loadIdeas() {
+  return JSON.parse(localStorage.getItem('ideas') || '[]');
+}
+function saveIdeas(arr) {
+  localStorage.setItem('ideas', JSON.stringify(arr));
+}
+function renderIdeas() {
+  const arr = loadIdeas();
+  const list = $('#ideaList');
+  list.innerHTML = '';
+  $('#ideaEmpty').style.display = arr.length ? 'none' : 'block';
+  arr.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'idea-card';
+    card.innerHTML = `
+      <button class="card-delete" onclick="deleteIdea(${i})">✕</button>
+      <span class="tag">${escapeHtml(item.category || '灵感')}</span>
+      <h4>${escapeHtml(item.title)}</h4>
+      <p>${escapeHtml(item.content)}</p>
+      <div class="meta"><span>${escapeHtml(item.date)}</span></div>
+    `;
+    list.appendChild(card);
+  });
+}
+function deleteIdea(i) {
+  const arr = loadIdeas();
+  arr.splice(i,1);
+  saveIdeas(arr);
+  renderIdeas();
+}
+
+// ===== 视频记录 =====
+function loadVideos() {
+  return JSON.parse(localStorage.getItem('videos') || '[]');
+}
+function saveVideos(arr) {
+  localStorage.setItem('videos', JSON.stringify(arr));
+}
+function renderVideos() {
+  const arr = loadVideos();
+  const list = $('#videoList');
+  list.innerHTML = '';
+  $('#videoEmpty').style.display = arr.length ? 'none' : 'block';
+  arr.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    card.innerHTML = `
+      <button class="card-delete" onclick="deleteVideo(${i})">✕</button>
+      <h4>${escapeHtml(item.title)}</h4>
+      ${item.url ? `<a class="url" href="${escapeHtml(item.url)}" target="_blank">${escapeHtml(item.url)}</a>` : ''}
+      <div class="desc">${escapeHtml(item.idea)}</div>
+      <div class="meta">
+        <span class="badge">${escapeHtml(item.type || '二创')}</span>
+        <span>${escapeHtml(item.date)}</span>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+function deleteVideo(i) {
+  const arr = loadVideos();
+  arr.splice(i,1);
+  saveVideos(arr);
+  renderVideos();
+}
+
+// ===== 复盘记录 =====
+function loadReviews() {
+  return JSON.parse(localStorage.getItem('reviews') || '[]');
+}
+function saveReviews(arr) {
+  localStorage.setItem('reviews', JSON.stringify(arr));
+}
+function renderReviews() {
+  const arr = loadReviews();
+  const list = $('#reviewList');
+  list.innerHTML = '';
+  $('#reviewEmpty').style.display = arr.length ? 'none' : 'block';
+  arr.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'review-card';
+    card.innerHTML = `
+      <button class="card-delete" onclick="deleteReview(${i})">✕</button>
+      <h4>${escapeHtml(item.title)}</h4>
+      ${item.good ? `<div class="review-section"><div class="review-label">✅ 做得好的</div><div class="review-content">${escapeHtml(item.good)}</div></div>`:''}
+      ${item.bad ? `<div class="review-section"><div class="review-label">⚠️ 待改进</div><div class="review-content">${escapeHtml(item.bad)}</div></div>`:''}
+      ${item.action ? `<div class="review-section"><div class="review-label">📝 下一步行动</div><div class="review-content">${escapeHtml(item.action)}</div></div>`:''}
+      <div class="meta">${escapeHtml(item.date)}</div>
+    `;
+    list.appendChild(card);
+  });
+}
+function deleteReview(i) {
+  const arr = loadReviews();
+  arr.splice(i,1);
+  saveReviews(arr);
+  renderReviews();
+}
+
+// ===== 模态框 =====
+function openModal() {
+  const body = $('#modalBody');
+  const title = $('#modalTitle');
+  if (currentPage === 'idea') {
+    title.textContent = '新增灵感';
+    body.innerHTML = `
+      <div class="form-row"><label>分类标签</label><input id="m_cat" placeholder="如：生活、知识、搞笑"></div>
+      <div class="form-row"><label>标题 *</label><input id="m_title" placeholder="灵感主题"></div>
+      <div class="form-row"><label>详细内容</label><textarea id="m_content" placeholder="详细描述这个灵感..."></textarea></div>
+    `;
+    $('#modalSave').onclick = () => {
+      const title = $('#m_title').value.trim();
+      if (!title) return;
+      const arr = loadIdeas();
+      arr.unshift({ category: $('#m_cat').value.trim()||'灵感', title, content: $('#m_content').value.trim(), date: todayFull() });
+      saveIdeas(arr); renderIdeas(); closeModal();
+    };
+  } else if (currentPage === 'video') {
+    title.textContent = '收藏视频 / 二创';
+    body.innerHTML = `
+      <div class="form-row"><label>视频标题 *</label><input id="m_title" placeholder="视频标题"></div>
+      <div class="form-row"><label>视频链接</label><input id="m_url" placeholder="https://..."></div>
+      <div class="form-row"><label>类型</label>
+        <select id="m_type"><option>二创</option><option>热点</option><option>参考</option><option>其他</option></select>
+      </div>
+      <div class="form-row"><label>二创思路 / 笔记</label><textarea id="m_idea" placeholder="可以怎么二创？切入点是什么？"></textarea></div>
+    `;
+    $('#modalSave').onclick = () => {
+      const title = $('#m_title').value.trim();
+      if (!title) return;
+      const arr = loadVideos();
+      arr.unshift({ title, url: $('#m_url').value.trim(), type: $('#m_type').value, idea: $('#m_idea').value.trim(), date: todayFull() });
+      saveVideos(arr); renderVideos(); closeModal();
+    };
+  } else if (currentPage === 'review') {
+    title.textContent = '新增复盘';
+    body.innerHTML = `
+      <div class="form-row"><label>内容标题 *</label><input id="m_title" placeholder="复盘哪条内容？"></div>
+      <div class="form-row"><label>✅ 做得好的</label><textarea id="m_good" placeholder="哪些方面表现不错？"></textarea></div>
+      <div class="form-row"><label>⚠️ 待改进</label><textarea id="m_bad" placeholder="哪些可以做得更好？"></textarea></div>
+      <div class="form-row"><label>📝 下一步行动</label><textarea id="m_action" placeholder="下次怎么优化？"></textarea></div>
+    `;
+    $('#modalSave').onclick = () => {
+      const title = $('#m_title').value.trim();
+      if (!title) return;
+      const arr = loadReviews();
+      arr.unshift({ title, good: $('#m_good').value.trim(), bad: $('#m_bad').value.trim(), action: $('#m_action').value.trim(), date: todayFull() });
+      saveReviews(arr); renderReviews(); closeModal();
+    };
+  }
+  $('#modalMask').classList.add('show');
+}
+function closeModal() {
+  $('#modalMask').classList.remove('show');
+}
+$('#modalMask').addEventListener('click', e => {
+  if (e.target === $('#modalMask')) closeModal();
+});
+
+function escapeHtml(s) {
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ===== 初始化 =====
+renderTasks();
+renderIdeas();
+renderVideos();
+renderReviews();
+</script>
+</body>
+</html>
