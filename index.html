@@ -142,6 +142,86 @@
     font-weight: 700;
   }
 
+  /* 个人信息编辑 */
+  .profile-edit-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+  }
+  .profile-avatar-large {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd1dc, #ff9eb5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    box-shadow: 0 2px 12px rgba(255, 158, 181, 0.3);
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .profile-avatar-large input {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .profile-fields { flex: 1; }
+  .profile-fields input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    margin-bottom: 8px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .profile-fields input:focus { outline: none; border-color: var(--primary); }
+
+  /* 收藏页面 */
+  .fav-tabs {
+    display: flex; gap: 8px; margin-bottom: 16px;
+    overflow-x: auto; padding-bottom: 4px;
+  }
+  .fav-tab {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: var(--bg-soft);
+    font-size: 13px; font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .2s;
+    border: none;
+  }
+  .fav-tab.active {
+    background: var(--primary);
+    color: #fff;
+  }
+  .fav-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .fav-card .fav-title {
+    font-size: 14px; font-weight: 700; margin-bottom: 6px;
+  }
+  .fav-card .fav-desc {
+    font-size: 12px; color: var(--text-light); line-height: 1.6;
+    max-height: 80px; overflow: hidden;
+    white-space: pre-wrap;
+  }
+  .fav-card .fav-date {
+    font-size: 11px; color: var(--text-light);
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .fav-empty {
+    text-align: center; padding: 40px 20px;
+    color: var(--text-light); font-size: 14px;
+  }
+
   /* ===== 主内容 ===== */
   .main {
     margin-left: 250px;
@@ -879,6 +959,16 @@
       <div class="nav-icon">📝</div><span>随笔记录</span>
     </div>
   </div>
+
+  <div class="nav-section">
+    <div class="nav-title">我的</div>
+    <div class="nav-item" data-page="profile">
+      <div class="nav-icon">👤</div><span>个人信息</span>
+    </div>
+    <div class="nav-item" data-page="favorites">
+      <div class="nav-icon">⭐</div><span>我的收藏</span>
+    </div>
+  </div>
 </aside>
 
 <!-- 主内容 -->
@@ -1035,6 +1125,68 @@
     </div>
   </section>
 
+  <!-- 个人信息 -->
+  <section class="page" id="page-profile">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h1>👤 个人信息</h1>
+        <p>设置你的头像 · 昵称 · 个性签名</p>
+      </div>
+    </div>
+
+    <div class="card" style="padding:24px;">
+      <div class="profile-edit-row">
+        <div class="profile-avatar-large" id="profileAvatarPreview" onclick="document.getElementById('avatarInput').click()">
+          🌸
+          <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)">
+        </div>
+        <div class="profile-fields">
+          <input type="text" id="profileName" placeholder="你的昵称" maxlength="20">
+          <input type="text" id="profileBio" placeholder="一句话介绍自己" maxlength="50">
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:6px;">头像 Emoji（也可直接输入emoji）</label>
+        <input type="text" id="profileEmoji" placeholder="🌸" maxlength="4" style="width:80px;text-align:center;font-size:20px;border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--bg);" oninput="updateAvatarPreview()">
+      </div>
+      <button class="btn-action" style="background:var(--primary);color:#fff;" onclick="saveProfile()">💾 保存信息</button>
+    </div>
+
+    <div class="card" style="padding:20px;margin-top:16px;">
+      <h3 style="font-size:14px;margin-bottom:12px;">📊 我的数据</h3>
+      <div class="stats-grid" id="profileStats">
+        <div class="stat-card"><div class="num" id="statTasks">0</div><div class="label">今日任务</div></div>
+        <div class="stat-card"><div class="num" id="statTravels">0</div><div class="label">旅行规划</div></div>
+        <div class="stat-card"><div class="num" id="statFoods">0</div><div class="label">美食推荐</div></div>
+        <div class="stat-card"><div class="num" id="statFavs">0</div><div class="label">收藏总数</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 我的收藏 -->
+  <section class="page" id="page-favorites">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h1>⭐ 我的收藏</h1>
+        <p>收藏的旅行攻略 · 美食推荐 · 爆款视频</p>
+      </div>
+    </div>
+
+    <div class="fav-tabs">
+      <button class="fav-tab active" data-favtab="all" onclick="switchFavTab('all')">全部</button>
+      <button class="fav-tab" data-favtab="travel" onclick="switchFavTab('travel')">✈️ 旅行</button>
+      <button class="fav-tab" data-favtab="food" onclick="switchFavTab('food')">🍜 美食</button>
+      <button class="fav-tab" data-favtab="video" onclick="switchFavTab('video')">🔥 视频</button>
+    </div>
+
+    <div id="favList"></div>
+    <div class="fav-empty" id="favEmpty">
+      <div style="font-size:40px;margin-bottom:12px;">⭐</div>
+      <p>还没有收藏内容</p>
+      <p style="font-size:12px;margin-top:8px;">在旅行攻略、美食推荐中点击收藏按钮即可保存到这里</p>
+    </div>
+  </section>
+
   <!-- 美食推荐 -->
   <section class="page" id="page-food">
     <div class="page-header">
@@ -1136,8 +1288,13 @@ function switchPage(page) {
   document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
   $('#page-' + page).classList.add('active');
 
-  // FAB 在计划页、旅行页、美食页不显示
-  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food') ? 'none' : 'flex';
+  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页不显示
+  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites') ? 'none' : 'flex';
+
+  // 收藏页：渲染收藏内容
+  if (page === 'favorites') renderFavorites();
+  // 个人信息页：更新统计
+  if (page === 'profile') updateProfileStats();
 }
 
 document.querySelectorAll('.nav-item, .bottom-item').forEach(item => {
@@ -1267,12 +1424,23 @@ function renderVideos() {
         <span class="badge">${escapeHtml(item.type || '二创')}</span>
         <span>${escapeHtml(item.date)}</span>
       </div>
+      <div class="travel-actions" style="margin-top:10px;">
+        <button class="btn-fav ${item.favorited ? 'favorited' : ''}" onclick="toggleFavVideo(${i})">
+          ${item.favorited ? '⭐ 取消收藏' : '☆ 收藏'}
+        </button>
+      </div>
     `;
     list.appendChild(card);
   });
 }
 function deleteVideo(i) {
   const arr = loadVideos(); arr.splice(i,1); saveVideos(arr); renderVideos();
+}
+function toggleFavVideo(i) {
+  const arr = loadVideos();
+  arr[i].favorited = !arr[i].favorited;
+  saveVideos(arr);
+  renderVideos();
 }
 
 // ===== 复盘记录 =====
@@ -1533,6 +1701,9 @@ function renderFoods() {
         <span>🕐 ${escapeHtml(item.date)}</span>
       </div>
       <div class="travel-actions">
+        <button class="btn-fav ${item.favorited ? 'favorited' : ''}" onclick="toggleFavFood(${i})">
+          ${item.favorited ? '⭐ 取消收藏' : '☆ 收藏'}
+        </button>
         <button class="btn-fav" onclick="shareFood(${i})">📤 分享</button>
         <button class="btn-del" onclick="deleteFood(${i})">🗑 删除</button>
       </div>
@@ -1629,6 +1800,12 @@ function loadDishImages(cardIndex, dishNames) {
 function deleteFood(i) {
   const arr = loadFoods(); arr.splice(i,1); saveFoods(arr); renderFoods();
 }
+function toggleFavFood(i) {
+  const arr = loadFoods();
+  arr[i].favorited = !arr[i].favorited;
+  saveFoods(arr);
+  renderFoods();
+}
 
 function shareFood(i) {
   const arr = loadFoods();
@@ -1663,6 +1840,177 @@ function renderNotes() {
 }
 function deleteNote(i) {
   const arr = loadNotes(); arr.splice(i,1); saveNotes(arr); renderNotes();
+}
+
+// ===== 个人信息 =====
+function loadProfile() {
+  return JSON.parse(localStorage.getItem('profile') || '{}');
+}
+function saveProfileData(data) {
+  localStorage.setItem('profile', JSON.stringify(data));
+}
+
+function initProfile() {
+  const p = loadProfile();
+  const name = p.name || '我的工作台';
+  const emoji = p.emoji || '🌸';
+  const bio = p.bio || '';
+
+  // 更新侧边栏
+  $('#userName').textContent = name;
+  $('#userAvatar').textContent = emoji;
+  if (p.avatar) {
+    $('#userAvatar').innerHTML = '<img src="' + p.avatar + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">';
+  }
+
+  // 更新个人信息页
+  $('#profileName').value = p.name || '';
+  $('#profileBio').value = bio;
+  $('#profileEmoji').value = emoji;
+  updateAvatarPreview();
+}
+
+function updateAvatarPreview() {
+  const emoji = $('#profileEmoji').value || '🌸';
+  const p = loadProfile();
+  const preview = $('#profileAvatarPreview');
+  if (p.avatar) {
+    preview.innerHTML = '<img src="' + p.avatar + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover"><input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)">';
+  } else {
+    preview.innerHTML = emoji + '<input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)">';
+  }
+}
+
+function uploadAvatar(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 500000) {
+    alert('图片太大，请选择小于500KB的图片');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const p = loadProfile();
+    p.avatar = e.target.result;
+    saveProfileData(p);
+    updateAvatarPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveProfile() {
+  const p = {
+    name: $('#profileName').value.trim() || '我的工作台',
+    bio: $('#profileBio').value.trim(),
+    emoji: $('#profileEmoji').value.trim() || '🌸'
+  };
+  // 保留已有头像
+  const old = loadProfile();
+  if (old.avatar) p.avatar = old.avatar;
+  saveProfileData(p);
+  initProfile();
+  updateProfileStats();
+
+  const btn = event.target;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '✅ 已保存';
+  setTimeout(() => { btn.innerHTML = orig; }, 2000);
+}
+
+function updateProfileStats() {
+  const tasks = loadTasks();
+  const doneCount = tasks.filter(t => t.done).length;
+  $('#statTasks').textContent = doneCount + '/' + tasks.length;
+  $('#statTravels').textContent = loadTravels().length;
+  $('#statFoods').textContent = loadFoods().length;
+  $('#statFavs').textContent = countFavorites();
+}
+
+// ===== 我的收藏 =====
+let currentFavTab = 'all';
+
+function countFavorites() {
+  let count = 0;
+  count += (loadTravels().filter(t => t.favorited)).length;
+  count += (loadFoods().filter(f => f.favorited)).length;
+  count += (loadVideos().filter(v => v.favorited)).length;
+  return count;
+}
+
+function switchFavTab(tab) {
+  currentFavTab = tab;
+  document.querySelectorAll('.fav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[data-favtab="${tab}"]`).classList.add('active');
+  renderFavorites();
+}
+
+function renderFavorites() {
+  const list = $('#favList');
+  const empty = $('#favEmpty');
+  list.innerHTML = '';
+  let items = [];
+
+  // 旅行收藏
+  if (currentFavTab === 'all' || currentFavTab === 'travel') {
+    loadTravels().forEach((t, i) => {
+      if (t.favorited) {
+        items.push({
+          type: 'travel',
+          icon: '✈️',
+          title: t.destination + (t.dateRange ? ' ' + t.dateRange : ''),
+          desc: t.guide ? (t.guide.raw || '').substring(0, 150) + '...' : '',
+          date: t.date || '',
+          origin: t.origin || ''
+        });
+      }
+    });
+  }
+  // 美食收藏
+  if (currentFavTab === 'all' || currentFavTab === 'food') {
+    loadFoods().forEach((f, i) => {
+      if (f.favorited) {
+        items.push({
+          type: 'food',
+          icon: '🍜',
+          title: f.location + (f.cuisine ? ' · ' + f.cuisine : ''),
+          desc: (f.content || '').substring(0, 150) + '...',
+          date: f.date || ''
+        });
+      }
+    });
+  }
+  // 视频收藏
+  if (currentFavTab === 'all' || currentFavTab === 'video') {
+    loadVideos().forEach((v, i) => {
+      if (v.favorited) {
+        items.push({
+          type: 'video',
+          icon: '🔥',
+          title: v.title || '未命名视频',
+          desc: v.idea || v.url || '',
+          date: v.date || ''
+        });
+      }
+    });
+  }
+
+  if (items.length === 0) {
+    empty.style.display = 'block';
+    list.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'fav-card';
+    card.innerHTML = `
+      <div class="fav-title">${item.icon} ${escapeHtml(item.title)}</div>
+      <div class="fav-desc">${escapeHtml(item.desc)}</div>
+      <div class="fav-date">🕐 ${escapeHtml(item.date)}</div>
+    `;
+    list.appendChild(card);
+  });
 }
 
 // ===== 旅行规划 =====
@@ -2083,6 +2431,7 @@ renderFoods();
 })();
 
 renderTravels();
+initProfile();
 
 // 调试：确认所有页面存在
 console.log('页面初始化完成，已注册页面:', 
