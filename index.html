@@ -1291,26 +1291,29 @@ function getLocation() {
   btn.innerHTML = '⏳ 定位中...';
   btn.disabled = true;
 
+  // 5秒超时保护，防止卡住
+  const timeoutId = setTimeout(() => {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+    alert('定位超时，建议手动输入位置');
+  }, 6000);
+
   navigator.geolocation.getCurrentPosition(
     function(pos) {
+      clearTimeout(timeoutId);
       const lat = pos.coords.latitude.toFixed(6);
       const lng = pos.coords.longitude.toFixed(6);
 
-      // 用 OpenStreetMap Nominatim 反向地理编码（免费无需key）
-      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=zh-CN&zoom=14')
+      // 优先使用城市级精度，速度更快
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=zh-CN&zoom=10', { timeout: 4000 })
         .then(r => r.json())
         .then(data => {
           if (data && data.address) {
             const addr = data.address;
-            let parts = [];
-            if (addr.province) parts.push(addr.province.replace(/省$/, ''));
-            if (addr.city) parts.push(addr.city.replace(/市$/, ''));
-            else if (addr.town) parts.push(addr.town);
-            if (addr.district) parts.push(addr.district);
-            else if (addr.suburb) parts.push(addr.suburb);
-            else if (addr.neighbourhood) parts.push(addr.neighbourhood);
-
-            const location = parts.length ? parts.slice(-2).join('') : (data.display_name || '').substring(0, 20);
+            let city = addr.city || addr.town || addr.county || '';
+            let district = addr.district || addr.suburb || '';
+            city = city.replace(/市$/, '').replace(/县$/, '');
+            const location = (city + district).substring(0, 20) || lat + ',' + lng;
             $('#f_location').value = location;
           } else {
             $('#f_location').value = lat + ',' + lng;
@@ -1325,6 +1328,7 @@ function getLocation() {
         });
     },
     function(err) {
+      clearTimeout(timeoutId);
       btn.innerHTML = orig;
       btn.disabled = false;
       let msg = '定位失败';
@@ -1333,7 +1337,7 @@ function getLocation() {
       else if (err.code === 3) msg = '定位超时，请重试或手动输入';
       alert(msg);
     },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
   );
 }
 
@@ -1368,10 +1372,15 @@ function searchFood() {
       cuisine: cuisine
     })
   })
-  .then(resp => resp.json())
+  .then(resp => {
+    if (!resp.ok) {
+      return resp.text().then(text => { throw new Error('HTTP ' + resp.status + ': ' + text.substring(0, 100)); });
+    }
+    return resp.json();
+  })
   .then(data => {
     if (data.error) {
-      $('#foodResult').innerHTML = `<div class="empty-state"><div class="icon">😢</div><p>搜索失败：${escapeHtml(data.error)}</p></div>`;
+      $('#foodResult').innerHTML = `<div class="empty-state"><div class="icon">😢</div><p>搜索失败：${escapeHtml(data.error)}</p><button class="btn btn-primary" style="margin-top:12px;" onclick="searchFood()">重新搜索</button></div>`;
       return;
     }
     const guide = data.guide.raw;
@@ -1390,7 +1399,8 @@ function searchFood() {
     document.querySelectorAll('#cuisineTags .cuisine-tag').forEach(el => el.classList.remove('selected'));
   })
   .catch(err => {
-    $('#foodResult').innerHTML = `<div class="empty-state"><div class="icon">😢</div><p>网络错误，请重试</p></div>`;
+    console.error('Food search error:', err);
+    $('#foodResult').innerHTML = `<div class="empty-state"><div class="icon">😢</div><p>网络连接超时，请重试</p><p style="font-size:12px;color:var(--text-light);margin-top:8px;">错误：${escapeHtml(err.message)}</p><button class="btn btn-primary" style="margin-top:12px;" onclick="searchFood()">重新搜索</button></div>`;
   })
   .finally(() => {
     btn.innerHTML = orig;
@@ -1543,7 +1553,10 @@ function submitTravelPlan() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ destination, origin, days, people, budget, styles })
   })
-  .then(resp => resp.json())
+  .then(resp => {
+    if (!resp.ok) return resp.text().then(t => { throw new Error('HTTP ' + resp.status); });
+    return resp.json();
+  })
   .then(data => {
     if (data.error) {
       console.log('AI error:', data.error);
@@ -1575,6 +1588,7 @@ function submitTravelPlan() {
   .catch(err => {
     console.log('Network error:', err);
     $('#promptCard').classList.add('show');
+    alert('网络连接较慢，已为你生成提示语。你可以复制提示语发给我，我帮你搜索生成攻略。');
   })
   .finally(() => {
     submitBtn.innerHTML = originalText;
