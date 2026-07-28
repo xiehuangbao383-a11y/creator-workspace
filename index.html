@@ -84,6 +84,53 @@
     font-size: 11px; color: var(--text-light);
   }
 
+  /* 积分余额卡片 */
+  .credits-card {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .credits-card::before {
+    content: "";
+    position: absolute; top: -20px; right: -20px;
+    width: 80px; height: 80px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+  }
+  .credits-card .credits-label {
+    font-size: 11px; opacity: 0.85; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .credits-card .credits-amount {
+    font-size: 24px; font-weight: 800; margin-bottom: 4px;
+  }
+  .credits-card .credits-amount .unit { font-size: 13px; font-weight: 600; opacity: 0.8; margin-left: 2px; }
+  .credits-card .credits-bar {
+    height: 5px; background: rgba(255,255,255,0.2);
+    border-radius: 3px; overflow: hidden; margin-bottom: 6px;
+  }
+  .credits-card .credits-bar-fill {
+    height: 100%; background: #fff; border-radius: 3px;
+    transition: width .6s;
+  }
+  .credits-card .credits-info {
+    font-size: 10px; opacity: 0.8;
+    display: flex; justify-content: space-between;
+  }
+  .credits-card .credits-refresh {
+    position: absolute; top: 10px; right: 10px;
+    width: 22px; height: 22px;
+    border: none; background: rgba(255,255,255,0.15);
+    border-radius: 50%; color: #fff;
+    font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1;
+  }
+
   .nav-section {
     margin-bottom: 18px;
   }
@@ -1019,6 +1066,18 @@
     <div class="profile-info">
       <h3 id="userName">我的工作台</h3>
       <p id="todayDate">2026年7月28日 星期二</p>
+    </div>
+  </div>
+
+  <!-- 积分余额卡片 -->
+  <div class="credits-card">
+    <button class="credits-refresh" onclick="loadCredits()" title="刷新">↻</button>
+    <div class="credits-label">💰 AI 积分余额</div>
+    <div class="credits-amount" id="creditsAmount">--<span class="unit">元</span></div>
+    <div class="credits-bar"><div class="credits-bar-fill" id="creditsBarFill" style="width:0%"></div></div>
+    <div class="credits-info">
+      <span id="creditsUsed">已用 ¥0.00</span>
+      <span id="creditsPercent">--</span>
     </div>
   </div>
 
@@ -2228,6 +2287,44 @@ function deleteNote(i) {
 }
 
 // ===== 个人信息 =====
+// ===== 积分余额 =====
+const CREDITS_TOTAL = 10; // 充值总额
+function loadCredits() {
+  const amountEl = $('#creditsAmount');
+  if (!amountEl) return;
+  amountEl.innerHTML = '加载中<span class="unit">...</span>';
+
+  fetch('https://api.deepseek.com/user/balance', {
+    headers: { 'Authorization': 'Bearer ' + DS_KEY }
+  })
+  .then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(data => {
+    const info = data.balance_infos[0];
+    const balance = parseFloat(info.total_balance);
+    const used = CREDITS_TOTAL - balance;
+    const percent = Math.round((used / CREDITS_TOTAL) * 100);
+
+    amountEl.innerHTML = balance.toFixed(2) + '<span class="unit">元</span>';
+    $('#creditsBarFill').style.width = percent + '%';
+    $('#creditsUsed').textContent = '已用 ¥' + used.toFixed(2);
+    $('#creditsPercent').textContent = percent + '% 已用';
+
+    // 余额不足警告
+    if (balance < 1) {
+      amountEl.style.color = '#ffb3b3';
+    } else {
+      amountEl.style.color = '#fff';
+    }
+  })
+  .catch(err => {
+    console.log('余额查询失败:', err);
+    amountEl.innerHTML = '查询失败<span class="unit"></span>';
+  });
+}
+
 function loadProfile() {
   return JSON.parse(localStorage.getItem('profile') || '{}');
 }
@@ -2868,6 +2965,7 @@ renderFoods();
 
 renderTravels();
 initProfile();
+loadCredits();
 
 // 请求通知权限（首次访问时浏览器会弹窗询问）
 requestNotifyPermission();
