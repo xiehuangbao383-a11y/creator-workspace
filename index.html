@@ -555,6 +555,38 @@
     white-space: pre-wrap;
     font-size: 13px; line-height: 1.8; color: var(--text);
   }
+  /* 菜品图片网格 */
+  .dish-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .dish-item {
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 4/3;
+    background: linear-gradient(135deg, var(--primary-soft), var(--bg-soft));
+  }
+  .dish-item img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .dish-emoji-block {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--primary-soft), #d4f0e0);
+  }
+  .dish-emoji-block .emoji {
+    font-size: 36px; line-height: 1;
+  }
+  .dish-item .dish-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.6));
+    color: #fff; font-size: 11px; font-weight: 600;
+    padding: 16px 8px 6px; text-align: center;
+  }
   .food-card .food-meta {
     margin-top: 12px; padding-top: 12px;
     border-top: 1px solid var(--border);
@@ -1408,7 +1440,7 @@ function searchFood() {
   // 显示 loading
   $('#foodResult').innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>正在为你搜索附近美食，请稍候...</p></div>';
 
-  const foodPrompt = `作为美食推荐官，请为以下需求推荐美食：\n\n位置：${location}\n菜系/关键词：${cuisine || '不限'}\n\n请按以下格式输出（中文，真实实用）：\n\n🍽️ 推荐餐厅/美食\n推荐5-8家${location}附近的${cuisine || '当地'}餐厅或美食，每条包含：\n- 餐厅/美食名称\n- 推荐菜（2-3道招牌）\n- 人均价格\n- 位置/区域\n- 一句话推荐理由\n\n💡 点餐建议\n（怎么点最划算、有什么搭配推荐）\n\n🚶 周边逛吃路线\n（吃完可以去哪逛，附近还有什么好吃的）\n\n要求：信息真实，基于实际餐厅和美食。如果不确定具体餐厅，推荐该区域常见的优质选择并说明。`;
+  const foodPrompt = `作为美食推荐官，请为以下需求推荐美食：\n\n位置：${location}\n菜系/关键词：${cuisine || '不限'}\n\n请按以下格式输出（中文，真实实用）：\n\n🍽️ 推荐餐厅/美食\n推荐5-8家${location}附近的${cuisine || '当地'}餐厅或美食，每条包含：\n- 餐厅/美食名称\n- 推荐菜（2-3道招牌），每道招牌菜用[[菜名]]标记，例如：[[招牌红烧肉]]\n- 人均价格\n- 位置/区域\n- 一句话推荐理由\n\n💡 点餐建议\n（怎么点最划算、有什么搭配推荐）\n\n🚶 周边逛吃路线\n（吃完可以去哪逛，附近还有什么好吃的）\n\n要求：信息真实，基于实际餐厅和美食。如果不确定具体餐厅，推荐该区域常见的优质选择并说明。`;
 
   callDeepSeek('你是专业美食推荐官，对中国各地美食和餐厅了如指掌。提供真实、实用的美食推荐。', foodPrompt, 2000)
   .then(guide => {
@@ -1465,9 +1497,9 @@ function generateLocalFoodGuide(location, cuisine) {
   const cuisineList = cuisine || '当地特色';
   let text = `🍽️ ${location}${cuisineList}美食推荐（基础版）\n\n`;
   text += `以下是基于常见经验的推荐，建议到大众点评/美团查看实时评价：\n\n`;
-  text += `1. ${location}老字号${cuisineList}餐厅\n   - 推荐菜：招牌家常菜2-3道\n   - 人均：60-100元\n   - 位置：市中心/老城区\n   - 理由：本地人常去，味道正宗\n\n`;
-  text += `2. ${location}热门${cuisineList}连锁店\n   - 推荐菜：人气套餐\n   - 人均：50-80元\n   - 位置：商圈/地铁站附近\n   - 理由：品质稳定，方便到达\n\n`;
-  text += `3. ${location}夜市/小吃街\n   - 推荐菜：各种小吃拼盘\n   - 人均：30-50元\n   - 位置：当地夜市/美食街\n   - 理由：种类丰富，体验地道烟火气\n\n`;
+  text += `1. ${location}老字号${cuisineList}餐厅\n   - 推荐菜：[[招牌红烧肉]]、[[清蒸鲈鱼]]、[[时令蔬菜]]\n   - 人均：60-100元\n   - 位置：市中心/老城区\n   - 理由：本地人常去，味道正宗\n\n`;
+  text += `2. ${location}热门${cuisineList}连锁店\n   - 推荐菜：[[特色烤鸡]]、[[酸辣土豆丝]]\n   - 人均：50-80元\n   - 位置：商圈/地铁站附近\n   - 理由：品质稳定，方便到达\n\n`;
+  text += `3. ${location}夜市/小吃街\n   - 推荐菜：[[麻辣烫]]、[[烤串拼盘]]、[[手工饺子]]\n   - 人均：30-50元\n   - 位置：当地夜市/美食街\n   - 理由：种类丰富，体验地道烟火气\n\n`;
   text += `💡 点餐建议\n- 2人建议点3-4个菜，不够再加\n- 看到本地人多的店通常不会踩雷\n- 可以问服务员当天有什么新鲜食材\n\n`;
   text += `🚶 周边逛吃路线\n- 先在大众点评搜索"${location} ${cuisineList}"查看评分\n- 到了之后先逛一圈对比价格再选\n- 吃完可以搜索附近甜品店/奶茶店\n\n`;
   text += `\n⚠️ 以上为基础推荐，AI 服务恢复后可重新搜索获取详细餐厅信息。`;
@@ -1485,10 +1517,18 @@ function renderFoods() {
   arr.forEach((item, i) => {
     const card = document.createElement('div');
     card.className = 'food-card';
+    // 提取 [[菜名]] 标记，生成图片画廊
+    const content = escapeHtml(item.content);
+    const dishNames = extractDishNames(item.content);
+    let galleryHtml = '';
+    if (dishNames.length > 0) {
+      galleryHtml = '<div class="dish-gallery" id="dishGallery' + i + '"></div>';
+    }
     card.innerHTML = `
       <button class="card-delete" onclick="deleteFood(${i})">✕</button>
       <h4>🍜 ${escapeHtml(item.location)}${item.cuisine ? ' · ' + escapeHtml(item.cuisine) : ''}</h4>
-      <div class="food-content">${escapeHtml(item.content)}</div>
+      ${galleryHtml}
+      <div class="food-content">${content}</div>
       <div class="food-meta">
         <span>🕐 ${escapeHtml(item.date)}</span>
       </div>
@@ -1498,6 +1538,91 @@ function renderFoods() {
       </div>
     `;
     result.appendChild(card);
+    // 异步加载菜品图片
+    if (dishNames.length > 0) {
+      loadDishImages(i, dishNames);
+    }
+  });
+}
+
+// 从文本中提取 [[菜名]] 标记
+function extractDishNames(text) {
+  const matches = text.match(/\[\[([^\]]+)\]\]/g) || [];
+  return matches.map(m => m.replace(/\[\[|\]\]/g, '')).slice(0, 6);
+}
+
+// 菜名 → emoji 映射
+function getDishEmoji(name) {
+  const map = {
+    '火锅': '🍲', '串串': '🍢', '烧烤': '🍖', '烤肉': '🥩', '烤鱼': '🐟',
+    '麻辣': '🌶️', '辣子': '🌶️', '水煮': '🌶️', '酸菜鱼': '🐟',
+    '红烧': '🍖', '排骨': '🍖', '鸡肉': '🍗', '鸭': '🦆', '牛肉': '🥩',
+    '羊肉': '🍖', '猪肉': '🥓', '鱼': '🐟', '虾': '🦐', '蟹': '🦀',
+    '豆腐': '🧈', '面': '🍜', '粉': '🍜', '米饭': '🍚', '炒饭': '🍚',
+    '饺子': '🥟', '包子': '🥟', '馄饨': '🥟', '汤': '🥣', '粥': '🥣',
+    '奶茶': '🧋', '茶': '🍵', '咖啡': '☕', '甜点': '🍰', '蛋糕': '🍰',
+    '冰淇淋': '🍦', '水果': '🍓', '沙拉': '🥗', '披萨': '🍕', '汉堡': '🍔',
+    '寿司': '🍣', '刺身': '🍣', '天妇罗': '🍤', '拉面': '🍜', '咖喱': '🍛',
+    '炒': '🥘', '蒸': '🫕', '卤': '🍖', '凉': '🥒', '饼': '🫓',
+    '糕': '🍰', '酥': '🥐', '卷': '🌯', '饭': '🍚', '鸡': '🍗'
+  };
+  for (const key in map) {
+    if (name.includes(key)) return map[key];
+  }
+  return '🍽️';
+}
+
+// 菜名 → 英文关键词（用于 TheMealDB 搜图）
+function getDishKeyword(name) {
+  const map = {
+    '火锅': 'hotpot', '麻辣': 'spicy', '鸡肉': 'chicken', '鸡': 'chicken',
+    '牛肉': 'beef', '鱼': 'fish', '虾': 'shrimp', '蟹': 'crab',
+    '豆腐': 'tofu', '面': 'noodle', '面条': 'noodle', '拉面': 'ramen',
+    '饺子': 'dumpling', '汤': 'soup', '炒饭': 'rice', '饭': 'rice',
+    '咖喱': 'curry', '寿司': 'sushi', '披萨': 'pizza', '汉堡': 'burger',
+    '蛋糕': 'cake', '甜点': 'dessert', '沙拉': 'salad', '排骨': 'pork',
+    '鸭': 'duck', '羊肉': 'lamb', '猪肉': 'pork', '烧烤': 'bbq'
+  };
+  for (const key in map) {
+    if (name.includes(key)) return map[key];
+  }
+  return '';
+}
+
+// 异步加载菜品图片
+function loadDishImages(cardIndex, dishNames) {
+  const gallery = $('#dishGallery' + cardIndex);
+  if (!gallery) return;
+
+  dishNames.forEach((name, idx) => {
+    const item = document.createElement('div');
+    item.className = 'dish-item';
+    const emoji = getDishEmoji(name);
+    // 先显示 emoji 色块
+    item.innerHTML = `<div class="dish-emoji-block"><span class="emoji">${emoji}</span></div><div class="dish-label">${escapeHtml(name)}</div>`;
+    gallery.appendChild(item);
+
+    // 尝试用 TheMealDB 搜真实图片
+    const keyword = getDishKeyword(name);
+    if (keyword) {
+      fetch('https://www.themealdb.com/api/json/v1/1/search.php?s=' + encodeURIComponent(keyword))
+        .then(r => r.json())
+        .then(data => {
+          const meals = data.meals;
+          if (meals && meals.length > 0) {
+            // 随机选一个匹配结果
+            const meal = meals[Math.floor(Math.random() * Math.min(meals.length, 3))];
+            const thumb = meal.strMealThumb;
+            // 预加载图片
+            const img = new Image();
+            img.onload = function() {
+              item.innerHTML = `<img src="${thumb}" alt="${escapeHtml(name)}" loading="lazy"><div class="dish-label">${escapeHtml(name)}</div>`;
+            };
+            img.src = thumb;
+          }
+        })
+        .catch(() => {});
+    }
   });
 }
 
