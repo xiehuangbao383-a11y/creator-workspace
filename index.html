@@ -1479,7 +1479,7 @@
           </div>
           <select id="finMonthFilter" onchange="onFinMonthChange()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fff;color:var(--text);font-weight:600;">
           </select>
-          <select id="finDayFilter" onchange="renderFinances()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fff;color:var(--text);font-weight:600;display:none;">
+          <select id="finDayFilter" onchange="renderFinances()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fff;color:var(--text);font-weight:600;">
             <option value="">全部日期</option>
           </select>
         </div>
@@ -2633,7 +2633,6 @@ function onFinMonthChange() {
   daySelect.innerHTML = '<option value="">全部日期</option>' +
     sortedDays.map(d => '<option value="' + d + '">' + d + '日</option>').join('');
   daySelect.value = '';
-  daySelect.style.display = 'inline-block';
   renderFinances();
 }
 
