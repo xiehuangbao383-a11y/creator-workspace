@@ -251,6 +251,24 @@
     margin-bottom: 12px;
     position: relative;
   }
+
+  /* 节假日列表 */
+  .holiday-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .holiday-item:last-child { border-bottom: none; }
+  .holiday-icon { font-size: 24px; }
+  .holiday-info { flex: 1; }
+  .holiday-name { font-size: 14px; font-weight: 700; color: var(--text); }
+  .holiday-date { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+  .holiday-countdown {
+    font-size: 13px; font-weight: 700; color: var(--primary-dark);
+    background: var(--primary-soft);
+    padding: 4px 10px; border-radius: 12px;
+    white-space: nowrap;
+  }
+
   .fav-card .fav-title {
     font-size: 14px; font-weight: 700; margin-bottom: 6px;
   }
@@ -1178,6 +1196,17 @@
 
     <div class="card">
       <div class="card-header">
+        <div class="card-icon">🎉</div>
+        <div>
+          <div class="card-title">即将到来</div>
+          <div class="card-subtitle">法定节假日 · 倒计时提醒</div>
+        </div>
+      </div>
+      <div id="holidayList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
         <div class="card-icon">✅</div>
         <div>
           <div class="card-title">任务列表</div>
@@ -1983,6 +2012,57 @@ function completeReminder() {
 setInterval(checkReminders, 10000);
 // 页面加载后 3 秒检查一次
 setTimeout(checkReminders, 3000);
+
+// ===== 节假日倒计时 =====
+const HOLIDAYS = [
+  { name: '七夕', icon: '💕', date: '2026-08-19', holidayDays: '8月19日' },
+  { name: '中元节', icon: '🕯️', date: '2026-08-28', holidayDays: '8月28日' },
+  { name: '中秋节', icon: '🌕', date: '2026-09-25', holidayDays: '9月25日-27日放假3天' },
+  { name: '国庆节', icon: '🇨🇳', date: '2026-10-01', holidayDays: '10月1日-8日放假8天' },
+  { name: '重阳节', icon: '🏔️', date: '2026-10-18', holidayDays: '10月18日' },
+  { name: '圣诞节', icon: '🎄', date: '2026-12-25', holidayDays: '12月25日' },
+  { name: '元旦', icon: '🎆', date: '2027-01-01', holidayDays: '1月1日-3日放假3天' },
+  { name: '春节', icon: '🧧', date: '2027-02-06', holidayDays: '2月6日-12日放假7天' },
+  { name: '清明节', icon: '🌿', date: '2027-04-05', holidayDays: '4月5日-7日放假3天' },
+  { name: '劳动节', icon: '👷', date: '2027-05-01', holidayDays: '5月1日-5日放假5天' },
+  { name: '端午节', icon: '🐲', date: '2027-06-09', holidayDays: '6月9日-11日放假3天' }
+];
+
+function renderHolidays() {
+  const list = $('#holidayList');
+  if (!list) return;
+  list.innerHTML = '';
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const upcoming = HOLIDAYS.map(h => {
+    const d = new Date(h.date + 'T00:00:00');
+    const diff = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+    return { ...h, diff, dateObj: d };
+  }).filter(h => h.diff >= -1).sort((a, b) => a.diff - b.diff).slice(0, 6);
+
+  if (upcoming.length === 0) {
+    list.innerHTML = '<div class="empty-state"><p>暂无即将到来的节假日</p></div>';
+    return;
+  }
+
+  upcoming.forEach(h => {
+    const div = document.createElement('div');
+    div.className = 'holiday-item';
+    const dateStr = (h.dateObj.getMonth() + 1) + '月' + h.dateObj.getDate() + '日';
+    const diffText = h.diff === 0 ? '今天' : (h.diff === 1 ? '明天' : '还有' + h.diff + '天');
+    div.innerHTML = `
+      <div class="holiday-icon">${h.icon}</div>
+      <div class="holiday-info">
+        <div class="holiday-name">${escapeHtml(h.name)}</div>
+        <div class="holiday-date">${escapeHtml(dateStr)} · ${escapeHtml(h.holidayDays)}</div>
+      </div>
+      <div class="holiday-countdown">${escapeHtml(diffText)}</div>
+    `;
+    list.appendChild(div);
+  });
+}
+renderHolidays();
 
 // ===== 灵感记录 =====
 function loadIdeas() { return JSON.parse(localStorage.getItem('ideas') || '[]'); }
