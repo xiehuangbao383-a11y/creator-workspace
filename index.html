@@ -2647,27 +2647,34 @@ function renderFinances() {
   const daySelect = $('#finDayFilter');
   const months = getAvailableMonths(arr);
   const currentVal = monthSelect.value;
-  const wasEmpty = !monthSelect.innerHTML;
+  const currentDayVal = daySelect.value;
   monthSelect.innerHTML = months.map(m => '<option value="' + m.value + '">' + m.label + '</option>').join('');
-  if (wasEmpty) {
-    const now = new Date();
-    monthSelect.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-    onFinMonthChange();
-    return;
-  }
   if (currentVal && months.some(m => m.value === currentVal)) {
     monthSelect.value = currentVal;
+  } else {
+    const now = new Date();
+    monthSelect.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   }
 
-  // 如果日期选择器还没初始化，先初始化
-  if (!daySelect.innerHTML.trim() || daySelect.innerHTML === '<option value="">全部日期</option>') {
-    onFinMonthChange();
-    return;
-  }
-
-  // 筛选选中月份 + 日期
+  // 更新日期选择器（根据当前选中的月份）
   const selMonth = monthSelect.value;
   const [selYear, selMonthNum] = selMonth.split('-').map(Number);
+  const days = new Set();
+  arr.forEach(item => {
+    const d = new Date(item.date);
+    if (d.getFullYear() === selYear && (d.getMonth()+1) === selMonthNum) {
+      days.add(d.getDate());
+    }
+  });
+  const sortedDayOpts = Array.from(days).sort((a, b) => b - a);
+  daySelect.innerHTML = '<option value="">全部日期</option>' +
+    sortedDayOpts.map(d => '<option value="' + d + '">' + d + '日</option>').join('');
+  if (currentDayVal && sortedDayOpts.includes(parseInt(currentDayVal))) {
+    daySelect.value = currentDayVal;
+  } else {
+    daySelect.value = '';
+  }
+
   const selDay = daySelect.value ? parseInt(daySelect.value) : 0;
 
   const filtered = arr.filter(item => {
