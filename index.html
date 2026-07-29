@@ -1452,6 +1452,7 @@
         </div>
 
         <div class="add-task-row" style="flex-wrap:wrap;">
+          <input type="date" id="finDate" style="flex:0 0 auto;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;color:var(--text);">
           <input type="number" id="finAmount" placeholder="金额" step="0.01" style="flex:0 0 100px;font-size:16px;font-weight:700;">
           <select id="finCategory" style="padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;color:var(--text);flex:0 0 auto;">
             <option value="餐饮">🍽️ 餐饮</option>
@@ -2477,6 +2478,11 @@ function checkFinanceLock() {
   if (finUnlocked) {
     $('#financeLock').style.display = 'none';
     $('#financeContent').style.display = 'block';
+    // 初始化日期为今天
+    const today = new Date();
+    const todayISO = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    const dateInput = $('#finDate');
+    if (dateInput && !dateInput.value) dateInput.value = todayISO;
     renderFinances();
     return;
   }
@@ -2553,9 +2559,18 @@ function addFinance() {
   const amount = parseFloat($('#finAmount').value);
   const category = $('#finCategory').value;
   const note = $('#finNote').value.trim();
+  const dateVal = $('#finDate').value;
   if (!amount || amount <= 0) {
     $('#finAmount').focus();
     return;
+  }
+  // 用选择的日期 + 当前时间
+  let recordDate;
+  if (dateVal) {
+    const now = new Date();
+    recordDate = new Date(dateVal + 'T' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':00');
+  } else {
+    recordDate = new Date();
   }
   const arr = loadFinances();
   arr.unshift({
@@ -2563,7 +2578,7 @@ function addFinance() {
     amount: amount.toFixed(2),
     category,
     note,
-    date: new Date().toISOString()
+    date: recordDate.toISOString()
   });
   saveFinances(arr);
   autoBackup();
