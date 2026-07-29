@@ -1357,6 +1357,16 @@
         <div class="stat-card"><div class="num" id="statFavs">0</div><div class="label">收藏总数</div></div>
       </div>
     </div>
+
+    <div class="card" style="padding:20px;margin-top:16px;">
+      <h3 style="font-size:14px;margin-bottom:4px;">💾 数据备份</h3>
+      <p style="font-size:11px;color:var(--text-light);margin-bottom:14px;">每次记录自动备份，也可手动导出/导入</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-action" style="background:var(--primary);color:#fff;font-size:13px;" onclick="exportData()">📤 导出数据</button>
+        <button class="btn-action" style="background:var(--bg-soft);color:var(--text);font-size:13px;border:1px solid var(--border);" onclick="importData()">📥 导入数据</button>
+      </div>
+      <p id="lastBackupTime" style="font-size:11px;color:var(--text-light);margin-top:10px;"></p>
+    </div>
   </section>
 
   <!-- 我的收藏 -->
@@ -2556,6 +2566,7 @@ function addFinance() {
     date: new Date().toISOString()
   });
   saveFinances(arr);
+  autoBackup();
   $('#finAmount').value = '';
   $('#finNote').value = '';
   renderFinances();
@@ -2565,6 +2576,7 @@ function deleteFinance(i) {
   const arr = loadFinances();
   arr.splice(i, 1);
   saveFinances(arr);
+  autoBackup();
   renderFinances();
 }
 
@@ -2738,6 +2750,54 @@ function renderFinances() {
   });
 }
 
+// ===== 数据备份 =====
+function autoBackup() {
+  const data = {
+    finances: loadFinances(),
+    travels: loadTravels(),
+    foods: loadFoods(),
+    tasks: loadTasks(),
+    notes: JSON.parse(localStorage.getItem('notes') || '[]'),
+    profile: loadProfile(),
+    backupTime: new Date().toISOString()
+  };
+  localStorage.setItem('workspace_backup', JSON.stringify(data));
+}
+
+function exportData() {
+  autoBackup();
+  const data = localStorage.getItem('workspace_backup');
+  const text = btoa(unescape(encodeURIComponent(data)));
+  if (navigator.share) {
+    navigator.share({ title: '工作台数据备份', text: text });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => alert('✅ 数据已复制到剪贴板，请粘贴到备忘录保存'));
+  } else {
+    prompt('请复制以下数据保存：', text);
+  }
+}
+
+function importData() {
+  const text = prompt('请粘贴之前导出的备份数据：');
+  if (!text) return;
+  try {
+    const json = decodeURIComponent(escape(atob(text.trim())));
+    const data = JSON.parse(json);
+    if (data.finances) saveFinances(data.finances);
+    if (data.travels) localStorage.setItem('travels', JSON.stringify(data.travels));
+    if (data.foods) localStorage.setItem('foods', JSON.stringify(data.foods));
+    if (data.notes) localStorage.setItem('notes', JSON.stringify(data.notes));
+    if (data.profile) saveProfileData(data.profile);
+    alert('✅ 数据导入成功！');
+    renderFinances();
+    renderTravels();
+    renderFoods();
+    initProfile();
+  } catch(e) {
+    alert('❌ 数据格式错误，请确认粘贴的是正确的备份数据');
+  }
+}
+
 function loadProfile() {
   return JSON.parse(localStorage.getItem('profile') || '{}');
 }
@@ -2870,6 +2930,18 @@ function updateProfileStats() {
   $('#statTravels').textContent = loadTravels().length;
   $('#statFoods').textContent = loadFoods().length;
   $('#statFavs').textContent = countFavorites();
+
+  // 显示最后备份时间
+  const backup = localStorage.getItem('workspace_backup');
+  if (backup) {
+    try {
+      const data = JSON.parse(backup);
+      if (data.backupTime) {
+        const d = new Date(data.backupTime);
+        $('#lastBackupTime').textContent = '🕐 最后备份：' + (d.getMonth()+1) + '月' + d.getDate() + '日 ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+      }
+    } catch(e) {}
+  }
 }
 
 // ===== 我的收藏 =====
