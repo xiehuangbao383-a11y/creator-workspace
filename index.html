@@ -269,6 +269,74 @@
     white-space: nowrap;
   }
 
+  /* 私厨菜谱 */
+  .recipe-tabs {
+    display: flex; gap: 8px; margin-bottom: 16px;
+    overflow-x: auto; padding-bottom: 4px;
+  }
+  .recipe-tab {
+    padding: 8px 16px; border-radius: 20px;
+    background: var(--bg-soft); font-size: 13px; font-weight: 600;
+    color: var(--text-light); cursor: pointer;
+    white-space: nowrap; border: none; transition: all .2s;
+  }
+  .recipe-tab.active { background: var(--primary); color: #fff; }
+  .recipe-card {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow-card); border: 1px solid var(--border);
+    margin-bottom: 12px; overflow: hidden;
+  }
+  .recipe-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; cursor: pointer;
+  }
+  .recipe-emoji {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--primary-soft), var(--bg-soft));
+  }
+  .recipe-info { flex: 1; min-width: 0; }
+  .recipe-name { font-size: 15px; font-weight: 700; }
+  .recipe-tags { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .recipe-tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 8px;
+    font-weight: 600;
+  }
+  .recipe-tag.cat-signature { background: #fff3cd; color: #856404; }
+  .recipe-tag.cat-daily { background: #e3f2fd; color: #1565c0; }
+  .recipe-tag.cat-guest { background: #f3e5f5; color: #7b1fa2; }
+  .recipe-tag.cat-experiment { background: #e8f5e9; color: #2e7d32; }
+  .recipe-tag.health { background: #fce4ec; color: #c62828; }
+  .recipe-arrow { font-size: 14px; color: var(--text-light); transition: transform .2s; }
+  .recipe-card.open .recipe-arrow { transform: rotate(90deg); }
+  .recipe-detail {
+    display: none; padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+    margin-top: 0;
+  }
+  .recipe-card.open .recipe-detail { display: block; padding-top: 14px; }
+  .recipe-section { margin-bottom: 14px; }
+  .recipe-section-title {
+    font-size: 12px; font-weight: 700; color: var(--primary-dark);
+    margin-bottom: 6px; display: flex; align-items: center; gap: 4px;
+  }
+  .recipe-ingredients { font-size: 13px; line-height: 1.8; color: var(--text); }
+  .recipe-steps { font-size: 13px; line-height: 1.8; color: var(--text); }
+  .recipe-steps .step { display: flex; gap: 8px; margin-bottom: 4px; }
+  .recipe-steps .step-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--primary-soft); color: var(--primary-dark);
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .recipe-note {
+    font-size: 12px; color: var(--text-light);
+    background: var(--bg-soft); padding: 8px 12px; border-radius: 8px;
+    line-height: 1.6;
+  }
+
   .fav-card .fav-title {
     font-size: 14px; font-weight: 700; margin-bottom: 6px;
   }
@@ -1138,6 +1206,9 @@
     <div class="nav-item" data-page="food">
       <div class="nav-icon">🍜</div><span>美食推荐</span>
     </div>
+    <div class="nav-item" data-page="recipe">
+      <div class="nav-icon">🍳</div><span>私厨菜谱</span>
+    </div>
     <div class="nav-item" data-page="finance">
       <div class="nav-icon">💰</div><span>收支管理</span>
     </div>
@@ -1422,6 +1493,32 @@
     </div>
   </section>
 
+  <!-- 私厨菜谱 -->
+  <section class="page" id="page-recipe">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h1>🍳 私厨菜谱</h1>
+        <p>私人菜谱库 · 点菜名查看做法 · 养生食疗</p>
+      </div>
+      <button class="btn-action" onclick="openRecipeForm()">+ 添加菜谱</button>
+    </div>
+
+    <div class="recipe-tabs">
+      <button class="recipe-tab active" data-rtab="all" onclick="switchRecipeTab('all')">全部</button>
+      <button class="recipe-tab" data-rtab="signature" onclick="switchRecipeTab('signature')">⭐ 招牌菜</button>
+      <button class="recipe-tab" data-rtab="daily" onclick="switchRecipeTab('daily')">🍚 日常菜</button>
+      <button class="recipe-tab" data-rtab="guest" onclick="switchRecipeTab('guest')">🍽️ 待客菜</button>
+      <button class="recipe-tab" data-rtab="experiment" onclick="switchRecipeTab('experiment')">🧪 实验中</button>
+      <button class="recipe-tab" data-rtab="health" onclick="switchRecipeTab('health')">🌿 养生食疗</button>
+    </div>
+
+    <div id="recipeList"></div>
+    <div class="empty-state" id="recipeEmpty">
+      <div class="icon">🍳</div>
+      <p>还没有菜谱，点击右上角添加第一道菜</p>
+    </div>
+  </section>
+
   <!-- 收支管理 -->
   <section class="page" id="page-finance">
     <!-- 锁定状态 -->
@@ -1630,6 +1727,57 @@
   </div>
 </div>
 
+<!-- 添加菜谱弹窗 -->
+<div class="remind-overlay" id="recipeOverlay" onclick="closeRecipeForm()"></div>
+<div class="remind-popup" id="recipeFormModal" style="width:340px;max-width:92vw;max-height:85vh;overflow-y:auto;text-align:left;">
+  <div style="text-align:center;margin-bottom:14px;">
+    <div class="remind-icon" style="font-size:36px;">🍳</div>
+    <div class="remind-title" id="recipeFormTitle">添加菜谱</div>
+  </div>
+  <input type="hidden" id="recipeEditIndex" value="-1">
+  <div style="margin-bottom:10px;">
+    <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px;">菜名</label>
+    <input type="text" id="r_name" placeholder="如：红烧肉" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px;background:#fff;">
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:10px;">
+    <div style="flex:1;">
+      <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px;">Emoji图标</label>
+      <input type="text" id="r_emoji" placeholder="🥘" maxlength="4" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:18px;text-align:center;background:#fff;">
+    </div>
+    <div style="flex:2;">
+      <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px;">分类</label>
+      <select id="r_category" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;">
+        <option value="signature">⭐ 招牌菜</option>
+        <option value="daily">🍚 日常菜</option>
+        <option value="guest">🍽️ 待客菜</option>
+        <option value="experiment">🧪 实验中</option>
+      </select>
+    </div>
+  </div>
+  <div style="margin-bottom:10px;">
+    <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px;">食材（每行一种）</label>
+    <textarea id="r_ingredients" placeholder="五花肉 500g&#10;冰糖 30g&#10;生抽 2勺" rows="3" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;resize:vertical;"></textarea>
+  </div>
+  <div style="margin-bottom:10px;">
+    <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px;">烹饪步骤（每行一步）</label>
+    <textarea id="r_steps" placeholder="1. 五花肉切块焯水&#10;2. 锅中放冰糖炒糖色&#10;3. 放入肉块翻炒上色" rows="4" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;resize:vertical;"></textarea>
+  </div>
+  <div style="margin-bottom:10px;">
+    <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px;">口味调整笔记</label>
+    <textarea id="r_note" placeholder="甜度可按喜好调整，加点陈皮更解腻" rows="2" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;resize:vertical;"></textarea>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:14px;">
+    <label style="font-size:12px;color:var(--text-light);display:flex;align-items:center;gap:4px;cursor:pointer;">
+      <input type="checkbox" id="r_health"> 🌿 养生食疗
+    </label>
+    <input type="text" id="r_healthTag" placeholder="养生标签（如：补气养血）" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fff;">
+  </div>
+  <div class="remind-btns">
+    <button class="btn-later" onclick="closeRecipeForm()">取消</button>
+    <button class="btn-complete" onclick="saveRecipe()">保存</button>
+  </div>
+</div>
+
 <script>
 // ===== 工具函数 =====
 const $ = s => document.querySelector(s);
@@ -1657,8 +1805,8 @@ function switchPage(page) {
   document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
   $('#page-' + page).classList.add('active');
 
-  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页、收支页不显示
-  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites' || page === 'finance') ? 'none' : 'flex';
+  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页、收支页、菜谱页不显示
+  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites' || page === 'finance' || page === 'recipe') ? 'none' : 'flex';
 
   // 收藏页：渲染收藏内容
   if (page === 'favorites') renderFavorites();
@@ -1666,6 +1814,8 @@ function switchPage(page) {
   if (page === 'profile') updateProfileStats();
   // 收支页：检查解锁状态
   if (page === 'finance') checkFinanceLock();
+  // 菜谱页：渲染
+  if (page === 'recipe') renderRecipes();
 
   // 移动端切换页面后关闭侧边栏
   closeSidebar();
@@ -1673,7 +1823,7 @@ function switchPage(page) {
   // 更新顶部栏标题
   const titles = {
     plan: '📋 任务待办', travel: '✈️ 旅行规划', food: '🍜 美食推荐',
-    profile: '👤 个人信息', favorites: '⭐ 我的收藏', finance: '💰 收支管理'
+    profile: '👤 个人信息', favorites: '⭐ 我的收藏', finance: '💰 收支管理', recipe: '🍳 私厨菜谱'
   };
   if ($('#topbarTitle')) $('#topbarTitle').textContent = titles[page] || '我的工作台';
 }
@@ -2566,6 +2716,146 @@ function loadCredits() {
   });
 }
 
+// ===== 私厨菜谱 =====
+function loadRecipes() { return JSON.parse(localStorage.getItem('recipes') || '[]'); }
+function saveRecipes(arr) { localStorage.setItem('recipes', JSON.stringify(arr)); autoBackup(); }
+
+let currentRecipeTab = 'all';
+
+function switchRecipeTab(tab) {
+  currentRecipeTab = tab;
+  document.querySelectorAll('.recipe-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[data-rtab="${tab}"]`).classList.add('active');
+  renderRecipes();
+}
+
+function renderRecipes() {
+  const arr = loadRecipes();
+  const list = $('#recipeList');
+  const empty = $('#recipeEmpty');
+  list.innerHTML = '';
+
+  let filtered = arr;
+  if (currentRecipeTab === 'health') {
+    filtered = arr.filter(r => r.health);
+  } else if (currentRecipeTab !== 'all') {
+    filtered = arr.filter(r => r.category === currentRecipeTab);
+  }
+
+  if (filtered.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const catLabels = { signature: '招牌菜', daily: '日常菜', guest: '待客菜', experiment: '实验中' };
+
+  filtered.forEach(item => {
+    const originalIndex = arr.indexOf(item);
+    const card = document.createElement('div');
+    card.className = 'recipe-card';
+    const emoji = item.emoji || '🍳';
+    const tagsHtml = `<span class="recipe-tag cat-${item.category}">${catLabels[item.category] || ''}</span>` +
+      (item.health ? `<span class="recipe-tag health">${item.healthTag || '养生'}</span>` : '');
+
+    // 食材和步骤格式化
+    const ingredients = (item.ingredients || '').split('\n').filter(l => l.trim()).map(l => `<div>${escapeHtml(l)}</div>`).join('');
+    const steps = (item.steps || '').split('\n').filter(l => l.trim()).map((l, idx) => 
+      `<div class="step"><div class="step-num">${idx+1}</div><div>${escapeHtml(l.replace(/^\d+\.\s*/, ''))}</div></div>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="recipe-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="recipe-emoji">${emoji}</div>
+        <div class="recipe-info">
+          <div class="recipe-name">${escapeHtml(item.name)}</div>
+          <div class="recipe-tags">${tagsHtml}</div>
+        </div>
+        <span class="recipe-arrow">▶</span>
+      </div>
+      <div class="recipe-detail">
+        ${ingredients ? `<div class="recipe-section"><div class="recipe-section-title">🥬 食材</div><div class="recipe-ingredients">${ingredients}</div></div>` : ''}
+        ${steps ? `<div class="recipe-section"><div class="recipe-section-title">👨‍🍳 烹饪步骤</div><div class="recipe-steps">${steps}</div></div>` : ''}
+        ${item.note ? `<div class="recipe-section"><div class="recipe-section-title">📝 口味笔记</div><div class="recipe-note">${escapeHtml(item.note)}</div></div>` : ''}
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn-action" style="font-size:12px;padding:6px 12px;background:var(--primary-soft);color:var(--primary-dark);" onclick="editRecipe(${originalIndex})">✏️ 编辑</button>
+          <button class="btn-action" style="font-size:12px;padding:6px 12px;background:#ffeaea;color:#c62828;" onclick="deleteRecipe(${originalIndex})">🗑 删除</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function openRecipeForm() {
+  $('#recipeEditIndex').value = '-1';
+  $('#recipeFormTitle').textContent = '添加菜谱';
+  $('#r_name').value = '';
+  $('#r_emoji').value = '';
+  $('#r_category').value = 'signature';
+  $('#r_ingredients').value = '';
+  $('#r_steps').value = '';
+  $('#r_note').value = '';
+  $('#r_health').checked = false;
+  $('#r_healthTag').value = '';
+  $('#recipeOverlay').classList.add('show');
+  $('#recipeFormModal').classList.add('show');
+}
+
+function closeRecipeForm() {
+  $('#recipeOverlay').classList.remove('show');
+  $('#recipeFormModal').classList.remove('show');
+}
+
+function editRecipe(i) {
+  const arr = loadRecipes();
+  const r = arr[i];
+  $('#recipeEditIndex').value = i;
+  $('#recipeFormTitle').textContent = '编辑菜谱';
+  $('#r_name').value = r.name || '';
+  $('#r_emoji').value = r.emoji || '';
+  $('#r_category').value = r.category || 'signature';
+  $('#r_ingredients').value = r.ingredients || '';
+  $('#r_steps').value = r.steps || '';
+  $('#r_note').value = r.note || '';
+  $('#r_health').checked = r.health || false;
+  $('#r_healthTag').value = r.healthTag || '';
+  $('#recipeOverlay').classList.add('show');
+  $('#recipeFormModal').classList.add('show');
+}
+
+function saveRecipe() {
+  const name = $('#r_name').value.trim();
+  if (!name) { $('#r_name').focus(); return; }
+  const recipe = {
+    name,
+    emoji: $('#r_emoji').value.trim() || '🍳',
+    category: $('#r_category').value,
+    ingredients: $('#r_ingredients').value.trim(),
+    steps: $('#r_steps').value.trim(),
+    note: $('#r_note').value.trim(),
+    health: $('#r_health').checked,
+    healthTag: $('#r_healthTag').value.trim()
+  };
+  const arr = loadRecipes();
+  const editIdx = parseInt($('#recipeEditIndex').value);
+  if (editIdx >= 0) {
+    arr[editIdx] = recipe;
+  } else {
+    arr.unshift(recipe);
+  }
+  saveRecipes(arr);
+  closeRecipeForm();
+  renderRecipes();
+}
+
+function deleteRecipe(i) {
+  const arr = loadRecipes();
+  arr.splice(i, 1);
+  saveRecipes(arr);
+  renderRecipes();
+}
+
 // ===== 收支管理 =====
 let finType = 'expense';
 let finUnlocked = false;
@@ -2931,6 +3221,7 @@ function autoBackup() {
     foods: loadFoods(),
     tasks: loadTasks(),
     notes: JSON.parse(localStorage.getItem('notes') || '[]'),
+    recipes: loadRecipes(),
     profile: loadProfile(),
     backupTime: new Date().toISOString()
   };
@@ -3624,6 +3915,7 @@ renderFoods();
 renderTravels();
 initProfile();
 loadCredits();
+renderRecipes();
 
 // 请求通知权限（首次访问时浏览器会弹窗询问）
 requestNotifyPermission();
