@@ -269,6 +269,30 @@
     color: var(--text-light); font-size: 14px;
   }
 
+  /* 收支按天分组 */
+  .fin-day-group {
+    margin-bottom: 16px;
+  }
+  .fin-day-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    font-size: 13px; font-weight: 700;
+    color: var(--text);
+  }
+  .fin-day-header .day-date { flex: 1; }
+  .fin-day-header .day-summary {
+    font-size: 11px; font-weight: 600;
+    display: flex; gap: 8px;
+  }
+  .fin-day-header .day-income { color: #2e7d32; }
+  .fin-day-header .day-expense { color: #c62828; }
+  .fin-day-items {
+    padding-left: 4px;
+  }
+
   /* ===== 主内容 ===== */
   .main {
     margin-left: 250px;
@@ -2646,28 +2670,71 @@ function renderFinances() {
   $('#finBalance').textContent = '¥' + (income - expense).toFixed(2);
   $('#finRecordCount').textContent = filtered.length + ' 条记录';
 
-  // 渲染列表（用原始数组的 index 方便删除）
+  // 按天分组
+  const groups = {};
   filtered.forEach(item => {
-    const originalIndex = arr.indexOf(item);
     const d = new Date(item.date);
-    const dateStr = (d.getMonth()+1) + '月' + d.getDate() + '日 ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-    const isIncome = item.type === 'income';
-    const div = document.createElement('div');
-    div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);';
-    div.innerHTML = `
-      <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:${isIncome ? '#e8f5e9' : '#ffebee'};">
-        ${isIncome ? '💰' : '💸'}
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:600;">${escapeHtml(item.category)}${item.note ? ' · ' + escapeHtml(item.note) : ''}</div>
-        <div style="font-size:11px;color:var(--text-light);">${dateStr}</div>
-      </div>
-      <div style="font-size:16px;font-weight:700;color:${isIncome ? '#2e7d32' : '#c62828'};flex-shrink:0;">
-        ${isIncome ? '+' : '-'}¥${item.amount}
-      </div>
-      <button class="task-delete" onclick="deleteFinance(${originalIndex})" style="opacity:1;">✕</button>
-    `;
-    list.appendChild(div);
+    const dayKey = d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+    if (!groups[dayKey]) groups[dayKey] = [];
+    groups[dayKey].push(item);
+  });
+
+  // 按日期倒序排列
+  const sortedDays = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  sortedDays.forEach(dayKey => {
+    const dayItems = groups[dayKey];
+    const [y, m, dd] = dayKey.split('-').map(Number);
+    const dayDate = new Date(y, m-1, dd);
+    const weekDays = ['日','一','二','三','四','五','六'];
+    const weekDay = weekDays[dayDate.getDay()];
+
+    // 当天小计
+    let dayIncome = 0, dayExpense = 0;
+    dayItems.forEach(item => {
+      if (item.type === 'income') dayIncome += parseFloat(item.amount);
+      else dayExpense += parseFloat(item.amount);
+    });
+
+    // 日期标题
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'fin-day-group';
+
+    const header = document.createElement('div');
+    header.className = 'fin-day-header';
+    let summaryHtml = '';
+    if (dayIncome > 0) summaryHtml += '<span class="day-income">+' + dayIncome.toFixed(2) + '</span>';
+    if (dayExpense > 0) summaryHtml += '<span class="day-expense">-' + dayExpense.toFixed(2) + '</span>';
+    header.innerHTML = '<span class="day-date">' + m + '月' + dd + '日 星期' + weekDay + '</span><span class="day-summary">' + summaryHtml + '</span>';
+    groupDiv.appendChild(header);
+
+    // 当天记录
+    const itemsDiv = document.createElement('div');
+    itemsDiv.className = 'fin-day-items';
+    dayItems.forEach(item => {
+      const originalIndex = arr.indexOf(item);
+      const d = new Date(item.date);
+      const timeStr = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+      const isIncome = item.type === 'income';
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border);';
+      div.innerHTML = `
+        <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:${isIncome ? '#e8f5e9' : '#ffebee'};">
+          ${isIncome ? '💰' : '💸'}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:600;">${escapeHtml(item.category)}${item.note ? ' · ' + escapeHtml(item.note) : ''}</div>
+          <div style="font-size:11px;color:var(--text-light);">${timeStr}</div>
+        </div>
+        <div style="font-size:16px;font-weight:700;color:${isIncome ? '#2e7d32' : '#c62828'};flex-shrink:0;">
+          ${isIncome ? '+' : '-'}¥${item.amount}
+        </div>
+        <button class="task-delete" onclick="deleteFinance(${originalIndex})" style="opacity:1;">✕</button>
+      `;
+      itemsDiv.appendChild(div);
+    });
+    groupDiv.appendChild(itemsDiv);
+    list.appendChild(groupDiv);
   });
 }
 
