@@ -1424,15 +1424,15 @@
       <div class="stats-grid">
         <div class="stat-card" style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9);">
           <div class="num" id="finIncome" style="color:#2e7d32;">¥0</div>
-          <div class="label">本月收入</div>
+          <div class="label" id="finIncomeLabel">本月收入</div>
         </div>
         <div class="stat-card" style="background:linear-gradient(135deg,#ffebee,#ffcdd2);">
           <div class="num" id="finExpense" style="color:#c62828;">¥0</div>
-          <div class="label">本月支出</div>
+          <div class="label" id="finExpenseLabel">本月支出</div>
         </div>
         <div class="stat-card" style="background:linear-gradient(135deg,#e3f2fd,#bbdefb);">
           <div class="num" id="finBalance" style="color:#1565c0;">¥0</div>
-          <div class="label">本月结余</div>
+          <div class="label" id="finBalanceLabel">本月结余</div>
         </div>
       </div>
 
@@ -2696,6 +2696,12 @@ function renderFinances() {
   $('#finExpense').textContent = '¥' + expense.toFixed(2);
   $('#finBalance').textContent = '¥' + (income - expense).toFixed(2);
   $('#finRecordCount').textContent = filtered.length + ' 条记录';
+
+  // 根据筛选更新标签文字
+  const periodLabel = selDay ? '当日' : '本月';
+  $('#finIncomeLabel').textContent = periodLabel + '收入';
+  $('#finExpenseLabel').textContent = periodLabel + '支出';
+  $('#finBalanceLabel').textContent = periodLabel + '结余';
 
   // 按天分组
   const groups = {};
