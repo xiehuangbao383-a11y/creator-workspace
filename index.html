@@ -1417,7 +1417,10 @@
           <h1>💰 收支管理</h1>
           <p>记录每一笔 · 清楚每一分</p>
         </div>
-        <button class="btn-action" style="background:var(--text-light);color:#fff;font-size:12px;" onclick="lockFinance()">🔒 锁定</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-action" style="background:var(--text-light);color:#fff;font-size:12px;" onclick="lockFinance()">🔒 锁定</button>
+          <button class="btn-action" style="background:var(--primary-soft);color:var(--primary-dark);font-size:12px;border:1px solid var(--border);" onclick="showChangePwd()">🔑 改密</button>
+        </div>
       </div>
 
       <!-- 统计卡片 -->
@@ -1578,6 +1581,23 @@
   <div class="remind-btns">
     <button class="btn-later" onclick="snoozeReminder()">稍后提醒</button>
     <button class="btn-complete" onclick="completeReminder()">标记完成</button>
+  </div>
+</div>
+
+<!-- 修改密码弹窗 -->
+<div class="remind-overlay" id="pwdOverlay" onclick="closePwdModal()"></div>
+<div class="remind-popup" id="pwdModal" style="width:320px;">
+  <div class="remind-icon">🔑</div>
+  <div class="remind-title">修改密码</div>
+  <div style="text-align:left;margin-bottom:16px;">
+    <input type="password" id="oldPwd" placeholder="当前密码" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;margin-bottom:10px;background:#fff;">
+    <input type="password" id="newPwd" placeholder="新密码" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;margin-bottom:10px;background:#fff;">
+    <input type="password" id="confirmPwd" placeholder="确认新密码" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;background:#fff;">
+    <p id="pwdChangeHint" style="font-size:11px;color:var(--danger);margin-top:8px;display:none;"></p>
+  </div>
+  <div class="remind-btns">
+    <button class="btn-later" onclick="closePwdModal()">取消</button>
+    <button class="btn-complete" onclick="changeFinPwd()">确认修改</button>
   </div>
 </div>
 
@@ -2532,6 +2552,52 @@ function lockFinance() {
   $('#financeLock').style.display = 'block';
   $('#financeContent').style.display = 'none';
   $('#financePwd').value = '';
+}
+
+// 修改密码
+function showChangePwd() {
+  $('#oldPwd').value = '';
+  $('#newPwd').value = '';
+  $('#confirmPwd').value = '';
+  $('#pwdChangeHint').style.display = 'none';
+  $('#pwdOverlay').classList.add('show');
+  $('#pwdModal').classList.add('show');
+}
+
+function closePwdModal() {
+  $('#pwdOverlay').classList.remove('show');
+  $('#pwdModal').classList.remove('show');
+}
+
+function changeFinPwd() {
+  const oldPwd = $('#oldPwd').value;
+  const newPwd = $('#newPwd').value;
+  const confirmPwd = $('#confirmPwd').value;
+  const hint = $('#pwdChangeHint');
+
+  if (!oldPwd || !newPwd || !confirmPwd) {
+    hint.style.display = 'block';
+    hint.textContent = '请填写所有字段';
+    return;
+  }
+  if (oldPwd !== getFinPwd()) {
+    hint.style.display = 'block';
+    hint.textContent = '❌ 当前密码错误';
+    return;
+  }
+  if (newPwd.length < 4) {
+    hint.style.display = 'block';
+    hint.textContent = '新密码至少4位';
+    return;
+  }
+  if (newPwd !== confirmPwd) {
+    hint.style.display = 'block';
+    hint.textContent = '❌ 两次输入的新密码不一致';
+    return;
+  }
+  localStorage.setItem('fin_pwd', newPwd);
+  closePwdModal();
+  alert('✅ 密码修改成功');
 }
 
 function setFinType(type) {
