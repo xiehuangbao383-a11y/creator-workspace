@@ -1741,8 +1741,12 @@
   </div>
   <div style="display:flex;gap:10px;margin-bottom:10px;">
     <div style="flex:1;">
-      <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px;">Emoji图标</label>
-      <input type="text" id="r_emoji" placeholder="🥘" maxlength="4" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:18px;text-align:center;background:#fff;">
+      <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px;">菜品图片</label>
+      <div id="r_imagePreview" style="width:100%;height:60px;border:1px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--bg-soft);cursor:pointer;position:relative;overflow:hidden;" onclick="document.getElementById('r_imageInput').click()">
+        <span id="r_imageDisplay">🍳</span>
+        <input type="file" id="r_imageInput" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
+      </div>
+      <input type="text" id="r_emoji" placeholder="或填emoji" maxlength="4" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;text-align:center;background:#fff;margin-top:4px;">
     </div>
     <div style="flex:2;">
       <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px;">分类</label>
@@ -2764,9 +2768,13 @@ function renderRecipes() {
       `<div class="step"><div class="step-num">${idx+1}</div><div>${escapeHtml(l.replace(/^\d+\.\s*/, ''))}</div></div>`
     ).join('');
 
+    const emojiOrImg = item.image
+      ? '<img src="' + item.image + '" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">'
+      : emoji;
+
     card.innerHTML = `
       <div class="recipe-header" onclick="this.parentElement.classList.toggle('open')">
-        <div class="recipe-emoji">${emoji}</div>
+        <div class="recipe-emoji">${emojiOrImg}</div>
         <div class="recipe-info">
           <div class="recipe-name">${escapeHtml(item.name)}</div>
           <div class="recipe-tags">${tagsHtml}</div>
@@ -2798,6 +2806,9 @@ function openRecipeForm() {
   $('#r_note').value = '';
   $('#r_health').checked = false;
   $('#r_healthTag').value = '';
+  $('#r_imageDisplay').textContent = '🍳';
+  $('#r_imageDisplay').innerHTML = '🍳';
+  $('#r_imageInput').value = '';
   $('#recipeOverlay').classList.add('show');
   $('#recipeFormModal').classList.add('show');
 }
@@ -2820,6 +2831,16 @@ function editRecipe(i) {
   $('#r_note').value = r.note || '';
   $('#r_health').checked = r.health || false;
   $('#r_healthTag').value = r.healthTag || '';
+  // 恢复图片预览
+  const display = $('#r_imageDisplay');
+  if (r.image) {
+    display.innerHTML = '<img src="' + r.image + '" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">';
+    $('#r_imagePreview').style.border = 'none';
+  } else {
+    display.textContent = r.emoji || '🍳';
+    $('#r_imagePreview').style.border = '1px dashed var(--border)';
+  }
+  $('#r_imageInput').value = '';
   $('#recipeOverlay').classList.add('show');
   $('#recipeFormModal').classList.add('show');
 }
@@ -2827,9 +2848,19 @@ function editRecipe(i) {
 function saveRecipe() {
   const name = $('#r_name').value.trim();
   if (!name) { $('#r_name').focus(); return; }
+
+  // 获取图片（从预览区提取）
+  let image = '';
+  const display = $('#r_imageDisplay');
+  const imgEl = display.querySelector('img');
+  if (imgEl) {
+    image = imgEl.src;
+  }
+
   const recipe = {
     name,
     emoji: $('#r_emoji').value.trim() || '🍳',
+    image,
     category: $('#r_category').value,
     ingredients: $('#r_ingredients').value.trim(),
     steps: $('#r_steps').value.trim(),
@@ -2848,6 +2879,24 @@ function saveRecipe() {
   closeRecipeForm();
   renderRecipes();
 }
+
+// 菜品图片上传
+$('#r_imageInput').addEventListener('change', function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 500000) {
+    alert('图片太大，请选择小于500KB的图片');
+    event.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    $('#r_imageDisplay').innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">';
+    $('#r_imagePreview').style.border = 'none';
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+});
 
 function deleteRecipe(i) {
   const arr = loadRecipes();
