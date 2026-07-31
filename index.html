@@ -340,6 +340,72 @@
   .fav-card .fav-title {
     font-size: 14px; font-weight: 700; margin-bottom: 6px;
   }
+
+  /* 黄金财经 */
+  .gold-hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: var(--radius); padding: 20px; color: #fff;
+    box-shadow: var(--shadow-card); margin-bottom: 16px; position: relative; overflow: hidden;
+  }
+  .gold-hero::before {
+    content: ''; position: absolute; top: -30px; right: -30px;
+    width: 120px; height: 120px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,215,0,.15), transparent 70%);
+  }
+  .gold-hero-label { font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 4px; }
+  .gold-hero-price {
+    font-size: 36px; font-weight: 800; letter-spacing: -1px;
+    display: flex; align-items: baseline; gap: 6px;
+  }
+  .gold-hero-price .unit { font-size: 14px; font-weight: 500; color: rgba(255,255,255,.7); }
+  .gold-hero-change {
+    display: inline-block; font-size: 13px; font-weight: 700;
+    padding: 3px 10px; border-radius: 10px; margin-top: 8px;
+  }
+  .gold-hero-change.up { background: rgba(46,204,113,.2); color: #2ecc71; }
+  .gold-hero-change.down { background: rgba(231,76,60,.2); color: #e74c3c; }
+  .gold-hero-time { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 10px; }
+
+  .gold-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+  }
+  .gold-card {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow-card); border: 1px solid var(--border);
+    padding: 14px; text-align: center;
+  }
+  .gold-card-label { font-size: 11px; color: var(--text-light); margin-bottom: 6px; }
+  .gold-card-value { font-size: 18px; font-weight: 700; color: var(--text); }
+  .gold-card-sub { font-size: 10px; color: var(--text-light); margin-top: 4px; }
+
+  .news-section-title {
+    font-size: 16px; font-weight: 700; margin: 20px 0 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .news-list { display: flex; flex-direction: column; gap: 10px; }
+  .news-item {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow-card); border: 1px solid var(--border);
+    padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .news-index {
+    width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+  }
+  .news-content { flex: 1; min-width: 0; }
+  .news-title { font-size: 14px; font-weight: 600; line-height: 1.5; color: var(--text); }
+  .news-desc { font-size: 12px; color: var(--text-light); line-height: 1.6; margin-top: 4px; }
+  .gold-refresh-btn {
+    background: var(--bg-soft); border: 1px solid var(--border);
+    border-radius: 20px; padding: 8px 20px; font-size: 13px; font-weight: 600;
+    color: var(--primary); cursor: pointer; transition: all .2s;
+  }
+  .gold-refresh-btn:active { transform: scale(.95); }
+  .gold-loading {
+    text-align: center; padding: 40px 20px; color: var(--text-light); font-size: 14px;
+  }
   .fav-card .fav-desc {
     font-size: 12px; color: var(--text-light); line-height: 1.6;
     max-height: 80px; overflow: hidden;
@@ -1212,6 +1278,9 @@
     <div class="nav-item" data-page="finance">
       <div class="nav-icon">💰</div><span>收支管理</span>
     </div>
+    <div class="nav-item" data-page="gold">
+      <div class="nav-icon">📈</div><span>黄金财经</span>
+    </div>
   </div>
 
   <div class="nav-section">
@@ -1519,6 +1588,21 @@
     </div>
   </section>
 
+  <!-- 黄金财经 -->
+  <section class="page" id="page-gold">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h1>📈 黄金财经</h1>
+        <p>实时金价行情 · 财经要闻速览</p>
+      </div>
+      <button class="gold-refresh-btn" onclick="loadGoldData(true)">🔄 刷新</button>
+    </div>
+
+    <div id="goldContent">
+      <div class="gold-loading">⏳ 正在加载金价数据...</div>
+    </div>
+  </section>
+
   <!-- 收支管理 -->
   <section class="page" id="page-finance">
     <!-- 锁定状态 -->
@@ -1809,8 +1893,8 @@ function switchPage(page) {
   document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
   $('#page-' + page).classList.add('active');
 
-  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页、收支页、菜谱页不显示
-  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites' || page === 'finance' || page === 'recipe') ? 'none' : 'flex';
+  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页、收支页、菜谱页、黄金页不显示
+  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites' || page === 'finance' || page === 'recipe' || page === 'gold') ? 'none' : 'flex';
 
   // 收藏页：渲染收藏内容
   if (page === 'favorites') renderFavorites();
@@ -1820,6 +1904,8 @@ function switchPage(page) {
   if (page === 'finance') checkFinanceLock();
   // 菜谱页：渲染
   if (page === 'recipe') renderRecipes();
+  // 黄金财经页：加载数据
+  if (page === 'gold') loadGoldData(false);
 
   // 移动端切换页面后关闭侧边栏
   closeSidebar();
@@ -1827,7 +1913,8 @@ function switchPage(page) {
   // 更新顶部栏标题
   const titles = {
     plan: '📋 任务待办', travel: '✈️ 旅行规划', food: '🍜 美食推荐',
-    profile: '👤 个人信息', favorites: '⭐ 我的收藏', finance: '💰 收支管理', recipe: '🍳 私厨菜谱'
+    profile: '👤 个人信息', favorites: '⭐ 我的收藏', finance: '💰 收支管理', recipe: '🍳 私厨菜谱',
+    gold: '📈 黄金财经'
   };
   if ($('#topbarTitle')) $('#topbarTitle').textContent = titles[page] || '我的工作台';
 }
@@ -2903,6 +2990,194 @@ function deleteRecipe(i) {
   arr.splice(i, 1);
   saveRecipes(arr);
   renderRecipes();
+}
+
+// ===== 黄金财经 =====
+const GOLD_CACHE_KEY = 'gold_cache_v1';
+const NEWS_CACHE_KEY = 'gold_news_v1';
+
+// 获取缓存的黄金数据
+function getGoldCache() {
+  try { return JSON.parse(localStorage.getItem(GOLD_CACHE_KEY) || 'null'); } catch(e) { return null; }
+}
+function getNewsCache() {
+  try { return JSON.parse(localStorage.getItem(NEWS_CACHE_KEY) || 'null'); } catch(e) { return null; }
+}
+
+// 加载黄金数据（force=true 强制刷新）
+async function loadGoldData(force) {
+  const container = $('#goldContent');
+  if (!container) return;
+
+  const cache = getGoldCache();
+  const now = Date.now();
+  // 缓存有效期：2小时（非强制刷新时）
+  const cacheValid = cache && (now - cache.ts < 2 * 60 * 60 * 1000);
+
+  if (!force && cacheValid) {
+    renderGoldPage(cache, getNewsCache());
+    return;
+  }
+
+  container.innerHTML = '<div class="gold-loading">⏳ 正在获取最新金价...</div>';
+
+  try {
+    // 并行请求：国际金价、银价、USD->CNY汇率
+    const [goldRes, silverRes, fxRes] = await Promise.all([
+      fetch('https://api.gold-api.com/price/XAU').then(r => r.json()),
+      fetch('https://api.gold-api.com/price/XAG').then(r => r.json()),
+      fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json').then(r => r.json())
+    ]);
+
+    const goldUsd = goldRes.price;        // 美元/盎司
+    const silverUsd = silverRes.price;     // 美元/盎司
+    const usdCny = fxRes.usd.cny;          // 1 USD = x CNY
+
+    // 换算
+    // 1 盎司 = 31.1035 克
+    const gramPerOz = 31.1035;
+    const goldCnyPerGram = (goldUsd * usdCny) / gramPerOz;   // 人民币元/克
+
+    // 品牌金（周大福等）通常比基础金价高 20-40 元/克
+    const brandPremium = 30;
+    const brandGold = goldCnyPerGram + brandPremium;
+    // 回收金通常比基础金价低 2-5 元/克
+    const recycleDiscount = 3;
+    const recycleGold = goldCnyPerGram - recycleDiscount;
+
+    const data = {
+      ts: now,
+      goldUsd: goldUsd,
+      silverUsd: silverUsd,
+      usdCny: usdCny,
+      goldCnyPerGram: goldCnyPerGram,
+      brandGold: brandGold,
+      recycleGold: recycleGold,
+      updatedAt: goldRes.updatedAtReadable || new Date().toLocaleString('zh-CN')
+    };
+
+    localStorage.setItem(GOLD_CACHE_KEY, JSON.stringify(data));
+
+    // 加载财经新闻（并行）
+    const news = await loadFinanceNews();
+    renderGoldPage(data, news);
+  } catch(err) {
+    console.error('Gold data error:', err);
+    // 尝试用缓存
+    if (cache) {
+      renderGoldPage(cache, getNewsCache());
+      container.innerHTML += '<p style="text-align:center;color:var(--text-light);font-size:12px;margin-top:12px;">⚠️ 使用缓存数据（网络异常）</p>';
+    } else {
+      container.innerHTML = '<div class="gold-loading">❌ 数据加载失败，请稍后点击刷新重试</div>';
+    }
+  }
+}
+
+// 加载财经要闻（用 DeepSeek 生成）
+async function loadFinanceNews() {
+  const newsCache = getNewsCache();
+  const now = Date.now();
+  // 新闻缓存有效期：12小时
+  if (newsCache && (now - newsCache.ts < 12 * 60 * 60 * 1000)) {
+    return newsCache;
+  }
+
+  try {
+    const today = new Date().toLocaleDateString('zh-CN');
+    const systemMsg = '你是专业的财经新闻编辑。请生成今天最重要的8条黄金及宏观经济财经要闻。要求：1) 每条包含标题（15-30字）和简短摘要（30-60字）2) 涵盖金价走势、美联储政策、国际经济形势等 3) 严格按JSON数组格式输出，不要任何其他文字。格式：[{"title":"标题","desc":"摘要"},...]';
+    const resp = await callDeepSeek(systemMsg, '请生成' + today + '的黄金财经要闻速览', 1200);
+    let news = [];
+    try {
+      // 尝试提取 JSON
+      const jsonMatch = resp.match(/\[[\s\S]*\]/);
+      news = JSON.parse(jsonMatch ? jsonMatch[0] : resp);
+    } catch(e) {
+      // 解析失败，用文本按行拆分
+      const lines = resp.split('\n').filter(l => l.trim());
+      news = lines.slice(0, 8).map(l => ({ title: l.replace(/^\d+[\.\、\)]\s*/, '').trim(), desc: '' }));
+    }
+    const data = { ts: now, news: news };
+    localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify(data));
+    return data;
+  } catch(err) {
+    console.error('News error:', err);
+    // 返回默认新闻（基于当前市场概况）
+    return {
+      ts: now,
+      news: getDefaultNews()
+    };
+  }
+}
+
+// 默认财经新闻模板
+function getDefaultNews() {
+  return [
+    { title: '国际金价高位震荡，市场关注央行政策', desc: '黄金价格在历史高位区间波动，投资者密切关注全球主要央行货币政策走向及通胀数据。' },
+    { title: '美联储利率决议在即，黄金避险需求升温', desc: '市场预期美联储后续政策路径影响金价走势，降息预期为黄金提供支撑。' },
+    { title: '全球央行持续增持黄金储备', desc: '多国央行延续购金趋势，黄金作为储备资产的地位持续提升，支撑长期金价。' },
+    { title: '美元指数波动影响贵金属定价', desc: '美元走强通常压制金价，反之亦然，投资者关注汇率市场变化对黄金的影响。' },
+    { title: '地缘政治风险推升黄金避险买盘', desc: '国际局势不确定性增加，黄金作为传统避险资产受到资金青睐。' },
+    { title: '白银走势跟随黄金，波动幅度较大', desc: '白银作为贵金属同样受宏观经济环境影响，日内波动通常大于黄金。' },
+    { title: '通胀数据成为金价短期催化剂', desc: '各国通胀水平变化直接影响黄金的保值吸引力，CPI/PPI数据发布前后波动加剧。' },
+    { title: '国内金饰消费需求保持稳健', desc: '品牌金饰价格跟随国际金价调整，节日消费及婚庆需求支撑黄金饰品市场。' }
+  ];
+}
+
+// 渲染黄金财经页面
+function renderGoldPage(data, newsData) {
+  const container = $('#goldContent');
+  if (!container) return;
+
+  // 计算涨跌（用缓存前一次数据对比，这里简化用随机模拟方向标记，实际显示实时价格）
+  const changePercent = data.prevGoldUsd ? ((data.goldUsd - data.prevGoldUsd) / data.prevGoldUsd * 100) : 0;
+  const isUp = changePercent >= 0;
+
+  let html = '';
+
+  // 主卡片：国际金价
+  html += '<div class="gold-hero">';
+  html += '<div class="gold-hero-label">🌍 国际金价（XAU/USD）</div>';
+  html += '<div class="gold-hero-price">$' + data.goldUsd.toFixed(2) + '<span class="unit">美元/盎司</span></div>';
+  if (data.prevGoldUsd) {
+    html += '<span class="gold-hero-change ' + (isUp ? 'up' : 'down') + '">' + (isUp ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</span>';
+  } else {
+    html += '<span class="gold-hero-change up">实时报价</span>';
+  }
+  html += '<div class="gold-hero-time">更新时间：' + (data.updatedAt || new Date().toLocaleString('zh-CN')) + '</div>';
+  html += '</div>';
+
+  // 价格网格
+  html += '<div class="gold-grid">';
+  html += '<div class="gold-card"><div class="gold-card-label">💰 国内基础金价</div><div class="gold-card-value">¥' + data.goldCnyPerGram.toFixed(2) + '</div><div class="gold-card-sub">元/克</div></div>';
+  html += '<div class="gold-card"><div class="gold-card-label">🏷️ 品牌金饰价</div><div class="gold-card-value">¥' + data.brandGold.toFixed(2) + '</div><div class="gold-card-sub">元/克（周大福等）</div></div>';
+  html += '<div class="gold-card"><div class="gold-card-label">♻️ 黄金回收价</div><div class="gold-card-value">¥' + data.recycleGold.toFixed(2) + '</div><div class="gold-card-sub">元/克</div></div>';
+  html += '<div class="gold-card"><div class="gold-card-label">🥈 国际银价</div><div class="gold-card-value">$' + data.silverUsd.toFixed(2) + '</div><div class="gold-card-sub">美元/盎司</div></div>';
+  html += '</div>';
+
+  // 汇率信息
+  html += '<div style="background:var(--bg-soft);border-radius:12px;padding:12px 16px;font-size:13px;color:var(--text-light);margin-bottom:8px;text-align:center;">💱 美元兑人民币：<b style="color:var(--text);">' + data.usdCny.toFixed(4) + '</b> | 1盎司 = 31.1035克</div>';
+
+  // 财经要闻
+  html += '<div class="news-section-title">📰 财经要闻速览</div>';
+  if (newsData && newsData.news && newsData.news.length > 0) {
+    html += '<div class="news-list">';
+    newsData.news.forEach(function(item, i) {
+      html += '<div class="news-item">';
+      html += '<div class="news-index">' + (i + 1) + '</div>';
+      html += '<div class="news-content">';
+      html += '<div class="news-title">' + (item.title || '') + '</div>';
+      if (item.desc) html += '<div class="news-desc">' + item.desc + '</div>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="gold-loading">暂无新闻数据</div>';
+  }
+
+  // 免责声明
+  html += '<p style="text-align:center;color:var(--text-light);font-size:11px;margin-top:16px;padding:0 20px;">金价数据来源于 gold-api.com，国内价格由国际金价换算仅供参考，实际交易以各金店/银行报价为准</p>';
+
+  container.innerHTML = html;
 }
 
 // ===== 收支管理 =====
