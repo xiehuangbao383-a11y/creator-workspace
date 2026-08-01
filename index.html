@@ -478,6 +478,70 @@
   .expr-action:active { transform: scale(.96); }
   .expr-action.reading { background: var(--primary); color: #fff; border-color: var(--primary); }
 
+  /* 英语学习 */
+  .eng-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+  }
+  .eng-stat-card {
+    background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
+    border-radius: var(--radius); padding: 18px 14px; text-align: center;
+    color: #fff; box-shadow: var(--shadow-card);
+  }
+  .eng-stat-num { font-size: 30px; font-weight: 800; line-height: 1; }
+  .eng-stat-label { font-size: 12px; margin-top: 6px; opacity: .9; }
+
+  .eng-today-header {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow-card); border: 1px solid var(--border);
+    padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .eng-today-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .eng-today-count {
+    background: #a8e6cf; color: #1f6f4a; font-weight: 700;
+    padding: 3px 12px; border-radius: 12px; font-size: 12px;
+  }
+  .eng-mark-btn {
+    background: var(--bg-soft); border: 1px solid var(--border);
+    border-radius: 16px; padding: 6px 14px; font-size: 12px; font-weight: 600;
+    color: var(--text); cursor: pointer;
+  }
+
+  .eng-word-item {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow-card); border: 1px solid var(--border);
+    padding: 16px 18px; margin-bottom: 12px;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .eng-word-info { flex: 1; min-width: 0; }
+  .eng-word-name {
+    font-size: 18px; font-weight: 700; color: var(--text);
+    margin-bottom: 4px;
+  }
+  .eng-word-phonetic {
+    font-size: 12px; color: var(--text-light);
+    font-family: 'Lucida Sans Unicode', Arial, sans-serif;
+    margin-bottom: 4px;
+  }
+  .eng-word-meaning {
+    font-size: 13px; color: var(--text); line-height: 1.5;
+  }
+  .eng-word-actions {
+    display: flex; flex-direction: column; gap: 8px;
+    align-items: center; flex-shrink: 0;
+  }
+  .eng-fav {
+    font-size: 18px; cursor: pointer; color: #ddd; transition: all .2s;
+  }
+  .eng-fav.starred { color: #ffc107; }
+  .eng-btn {
+    background: #e8f5e9; border: 1px solid #c8e6c9;
+    border-radius: 14px; padding: 4px 10px; font-size: 11px;
+    color: #2e7d32; font-weight: 600; cursor: pointer;
+    white-space: nowrap; display: flex; align-items: center; gap: 3px;
+  }
+  .eng-btn:active { background: #a8e6cf; }
+
   .fav-card .fav-desc {
     font-size: 12px; color: var(--text-light); line-height: 1.6;
     max-height: 80px; overflow: hidden;
@@ -1356,6 +1420,9 @@
     <div class="nav-item" data-page="expression">
       <div class="nav-icon">🗣️</div><span>表达能力</span>
     </div>
+    <div class="nav-item" data-page="english">
+      <div class="nav-icon">📖</div><span>英语学习</span>
+    </div>
   </div>
 
   <div class="nav-section">
@@ -1709,6 +1776,40 @@
     </div>
   </section>
 
+  <!-- 英语学习 -->
+  <section class="page" id="page-english">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h1>📖 英语学习</h1>
+        <p>每天 20 个新词 · 持续积累</p>
+      </div>
+      <button class="gold-refresh-btn" onclick="loadEnglish(true)">🔄 换词</button>
+    </div>
+
+    <div class="eng-stats">
+      <div class="eng-stat-card">
+        <div class="eng-stat-num" id="engDays">0</div>
+        <div class="eng-stat-label">累计学习天数</div>
+      </div>
+      <div class="eng-stat-card">
+        <div class="eng-stat-num" id="engTotal">0</div>
+        <div class="eng-stat-label">累计学习单词</div>
+      </div>
+    </div>
+
+    <div class="eng-today-header">
+      <div class="eng-today-title">
+        <span>📚 今日新词</span>
+        <span class="eng-today-count" id="engTodayCount">20</span>
+      </div>
+      <button class="eng-mark-btn" onclick="markAllLearned()">标记已学</button>
+    </div>
+
+    <div id="engContent">
+      <div class="gold-loading">⏳ 正在生成今日新词...</div>
+    </div>
+  </section>
+
   <!-- 收支管理 -->
   <section class="page" id="page-finance">
     <!-- 锁定状态 -->
@@ -1999,8 +2100,8 @@ function switchPage(page) {
   document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
   $('#page-' + page).classList.add('active');
 
-  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页、收支页、菜谱页、黄金页、表达能力页不显示
-  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites' || page === 'finance' || page === 'recipe' || page === 'gold' || page === 'expression') ? 'none' : 'flex';
+  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页、收支页、菜谱页、黄金页、表达能力页、英语学习页不显示
+  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites' || page === 'finance' || page === 'recipe' || page === 'gold' || page === 'expression' || page === 'english') ? 'none' : 'flex';
 
   // 收藏页：渲染收藏内容
   if (page === 'favorites') renderFavorites();
@@ -2014,6 +2115,8 @@ function switchPage(page) {
   if (page === 'gold') loadGoldData(false);
   // 表达能力页：加载内容
   if (page === 'expression') loadExpression(false);
+  // 英语学习页：加载今日新词
+  if (page === 'english') loadEnglish(false);
 
   // 移动端切换页面后关闭侧边栏
   closeSidebar();
@@ -2022,7 +2125,7 @@ function switchPage(page) {
   const titles = {
     plan: '📋 任务待办', travel: '✈️ 旅行规划', food: '🍜 美食推荐',
     profile: '👤 个人信息', favorites: '⭐ 我的收藏', finance: '💰 收支管理', recipe: '🍳 私厨菜谱',
-    gold: '📈 黄金财经', expression: '🗣️ 表达能力'
+    gold: '📈 黄金财经', expression: '🗣️ 表达能力', english: '📖 英语学习'
   };
   if ($('#topbarTitle')) $('#topbarTitle').textContent = titles[page] || '我的工作台';
 }
@@ -3368,10 +3471,411 @@ function toastCopy(msg) {
   setTimeout(function() { document.body.removeChild(t); }, 1500);
 }
 
-// ===== 黄金财经 =====
+// ===== 英语学习 =====
+const ENG_CACHE_KEY = 'eng_cache_v1';
+const ENG_STATS_KEY = 'eng_stats_v1';
+const ENG_FAV_KEY = 'eng_fav_v1';
+
+const ENG_WORD_BANK = [
+  { w: 'abandon', p: '/əˈbændən/', m: 'v. 放弃，抛弃' },
+  { w: 'benefit', p: '/ˈbenɪfɪt/', m: 'n. 利益，好处' },
+  { w: 'capacity', p: '/kəˈpæsəti/', m: 'n. 能力，容量' },
+  { w: 'diligent', p: '/ˈdɪlɪdʒənt/', m: 'adj. 勤奋的' },
+  { w: 'economy', p: '/ɪˈkɒnəmi/', m: 'n. 经济' },
+  { w: 'factor', p: '/ˈfæktə/', m: 'n. 因素' },
+  { w: 'genuine', p: '/ˈdʒenjuɪn/', m: 'adj. 真正的' },
+  { w: 'harmony', p: '/ˈhɑːməni/', m: 'n. 和谐' },
+  { w: 'identify', p: '/aɪˈdentɪfaɪ/', m: 'v. 识别，确认' },
+  { w: 'justify', p: '/ˈdʒʌstɪfaɪ/', m: 'v. 证明合理' },
+  { w: 'knowledge', p: '/ˈnɒlɪdʒ/', m: 'n. 知识' },
+  { w: 'launch', p: '/lɔːntʃ/', m: 'v. 启动，发射' },
+  { w: 'maintain', p: '/meɪnˈteɪn/', m: 'v. 维持' },
+  { w: 'negotiate', p: '/nɪˈɡəʊʃieɪt/', m: 'v. 谈判' },
+  { w: 'obstacle', p: '/ˈɒbstəkl/', m: 'n. 障碍' },
+  { w: 'perspective', p: '/pəˈspektɪv/', m: 'n. 视角' },
+  { w: 'qualify', p: '/ˈkwɒlɪfaɪ/', m: 'v. 使合格' },
+  { w: 'reliable', p: '/rɪˈlaɪəbl/', m: 'adj. 可靠的' },
+  { w: 'significant', p: '/sɪɡˈnɪfɪkənt/', m: 'adj. 显著的' },
+  { w: 'transform', p: '/trænsˈfɔːm/', m: 'v. 转变' },
+  { w: 'ultimate', p: '/ˈʌltɪmət/', m: 'adj. 最终的' },
+  { w: 'valuable', p: '/ˈvæljuəbl/', m: 'adj. 有价值的' },
+  { w: 'welfare', p: '/ˈwelfeə/', m: 'n. 福利' },
+  { w: 'achieve', p: '/əˈtʃiːv/', m: 'v. 实现' },
+  { w: 'brief', p: '/briːf/', m: 'adj. 简短的' },
+  { w: 'concentrate', p: '/ˈkɒnsntreɪt/', m: 'v. 集中' },
+  { w: 'demonstrate', p: '/ˈdemənstreɪt/', m: 'v. 证明' },
+  { w: 'efficient', p: '/ɪˈfɪʃnt/', m: 'adj. 高效的' },
+  { w: 'flexible', p: '/ˈfleksəbl/', m: 'adj. 灵活的' },
+  { w: 'generate', p: '/ˈdʒenəreɪt/', m: 'v. 产生' },
+  { w: 'hypothesis', p: '/haɪˈpɒθəsɪs/', m: 'n. 假设' },
+  { w: 'implement', p: '/ˈɪmplɪment/', m: 'v. 实施' },
+  { w: 'judge', p: '/dʒʌdʒ/', m: 'v. 判断' },
+  { w: 'keen', p: '/kiːn/', m: 'adj. 热衷的' },
+  { w: 'logical', p: '/ˈlɒdʒɪkl/', m: 'adj. 逻辑的' },
+  { w: 'modify', p: '/ˈmɒdɪfaɪ/', m: 'v. 修改' },
+  { w: 'notice', p: '/ˈnəʊtɪs/', m: 'v. 注意到' },
+  { w: 'opportunity', p: '/ˌɒpəˈtjuːnəti/', m: 'n. 机会' },
+  { w: 'precise', p: '/prɪˈsaɪs/', m: 'adj. 精确的' },
+  { w: 'quality', p: '/ˈkwɒləti/', m: 'n. 质量' },
+  { w: 'relevant', p: '/ˈreləvənt/', m: 'adj. 相关的' },
+  { w: 'strategy', p: '/ˈstrætədʒi/', m: 'n. 策略' },
+  { w: 'target', p: '/ˈtɑːɡɪt/', m: 'n. 目标' },
+  { w: 'unique', p: '/juˈniːk/', m: 'adj. 独特的' },
+  { w: 'visible', p: '/ˈvɪzəbl/', m: 'adj. 可见的' },
+  { w: 'widespread', p: '/ˈwaɪdspred/', m: 'adj. 广泛的' },
+  { w: 'absence', p: '/ˈæbsəns/', m: 'n. 缺席' },
+  { w: 'boundary', p: '/ˈbaʊndri/', m: 'n. 边界' },
+  { w: 'collapse', p: '/kəˈlæps/', m: 'v. 崩溃' },
+  { w: 'deliver', p: '/dɪˈlɪvə/', m: 'v. 递送' },
+  { w: 'encourage', p: '/ɪnˈkʌrɪdʒ/', m: 'v. 鼓励' },
+  { w: 'familiar', p: '/fəˈmɪliə/', m: 'adj. 熟悉的' },
+  { w: 'grateful', p: '/ˈɡreɪtfl/', m: 'adj. 感激的' },
+  { w: 'hesitate', p: '/ˈhezɪteɪt/', m: 'v. 犹豫' },
+  { w: 'ignore', p: '/ɪɡˈnɔː/', m: 'v. 忽视' },
+  { w: 'judgement', p: '/ˈdʒʌdʒmənt/', m: 'n. 判断' },
+  { w: 'keepsake', p: '/ˈkiːpseɪk/', m: 'n. 纪念品' },
+  { w: 'landscape', p: '/ˈlændskeɪp/', m: 'n. 风景' },
+  { w: 'mature', p: '/məˈtʃʊə/', m: 'adj. 成熟的' },
+  { w: 'neglect', p: '/nɪˈɡlekt/', m: 'v. 忽视' },
+  { w: 'obvious', p: '/ˈɒbviəs/', m: 'adj. 明显的' },
+  { w: 'propose', p: '/prəˈpəʊz/', m: 'v. 提议' },
+  { w: 'require', p: '/rɪˈkwaɪə/', m: 'v. 需要' },
+  { w: 'sincere', p: '/sɪnˈsɪə/', m: 'adj. 真诚的' },
+  { w: 'thrive', p: '/θraɪv/', m: 'v. 茁壮成长' },
+  { w: 'undertake', p: '/ˌʌndəˈteɪk/', m: 'v. 承担' },
+  { w: 'vague', p: '/veɪɡ/', m: 'adj. 模糊的' },
+  { w: 'witness', p: '/ˈwɪtnəs/', m: 'v. 目击' },
+  { w: 'abrupt', p: '/əˈbrʌpt/', m: 'adj. 突然的' },
+  { w: 'blame', p: '/bleɪm/', m: 'v. 责备' },
+  { w: 'commit', p: '/kəˈmɪt/', m: 'v. 承诺' },
+  { w: 'deny', p: '/dɪˈnaɪ/', m: 'v. 否认' },
+  { w: 'endure', p: '/ɪnˈdjʊə/', m: 'v. 忍耐' },
+  { w: 'fulfill', p: '/fʊlˈfɪl/', m: 'v. 履行' },
+  { w: 'grant', p: '/ɡrɑːnt/', m: 'v. 授予' },
+  { w: 'hostile', p: '/ˈhɒstaɪl/', m: 'adj. 敌对的' },
+  { w: 'inspire', p: '/ɪnˈspaɪə/', m: 'v. 激励' },
+  { w: 'joint', p: '/dʒɔɪnt/', m: 'adj. 联合的' },
+  { w: 'linger', p: '/ˈlɪŋɡə/', m: 'v. 逗留' },
+  { w: 'mislead', p: '/mɪsˈliːd/', m: 'v. 误导' },
+  { w: 'noble', p: '/ˈnəʊbl/', m: 'adj. 高贵的' },
+  { w: 'outline', p: '/ˈaʊtlaɪn/', m: 'n. 大纲' },
+  { w: 'persist', p: '/pəˈsɪst/', m: 'v. 坚持' },
+  { w: 'quit', p: '/kwɪt/', m: 'v. 退出' },
+  { w: 'resist', p: '/rɪˈzɪst/', m: 'v. 抵抗' },
+  { w: 'surround', p: '/səˈraʊnd/', m: 'v. 包围' },
+  { w: 'thorough', p: '/ˈθʌrə/', m: 'adj. 彻底的' },
+  { w: 'urge', p: '/ɜːdʒ/', m: 'v. 敦促' },
+  { w: 'vanish', p: '/ˈvænɪʃ/', m: 'v. 消失' },
+  { w: 'wander', p: '/ˈwɒndə/', m: 'v. 漫游' },
+  { w: 'yield', p: '/jiːld/', m: 'v. 屈服' },
+  { w: 'abstract', p: '/ˈæbstrækt/', m: 'adj. 抽象的' },
+  { w: 'ban', p: '/bæn/', m: 'v. 禁止' },
+  { w: 'capture', p: '/ˈkæptʃə/', m: 'v. 捕获' },
+  { w: 'diminish', p: '/dɪˈmɪnɪʃ/', m: 'v. 减少' },
+  { w: 'eliminate', p: '/ɪˈlɪmɪneɪt/', m: 'v. 消除' },
+  { w: 'forbid', p: '/fəˈbɪd/', m: 'v. 禁止' },
+  { w: 'gather', p: '/ˈɡæðə/', m: 'v. 聚集' },
+  { w: 'insight', p: '/ˈɪnsaɪt/', m: 'n. 洞察力' },
+  { w: 'leisure', p: '/ˈleʒə/', m: 'n. 闲暇' },
+  { w: 'nurture', p: '/ˈnɜːtʃə/', m: 'v. 培养' },
+  { w: 'obey', p: '/əˈbeɪ/', m: 'v. 服从' },
+  { w: 'prohibit', p: '/prəˈhɪbɪt/', m: 'v. 禁止' },
+  { w: 'quote', p: '/kwəʊt/', m: 'v. 引用' },
+  { w: 'reveal', p: '/rɪˈviːl/', m: 'v. 揭示' },
+  { w: 'shelter', p: '/ˈʃeltə/', m: 'n. 避难所' },
+  { w: 'tremble', p: '/ˈtrembl/', m: 'v. 颤抖' },
+  { w: 'universal', p: '/ˌjuːnɪˈvɜːsl/', m: 'adj. 普遍的' },
+  { w: 'vital', p: '/ˈvaɪtl/', m: 'adj. 至关重要的' },
+  { w: 'abundant', p: '/əˈbʌndənt/', m: 'adj. 丰富的' },
+  { w: 'bold', p: '/bəʊld/', m: 'adj. 大胆的' },
+  { w: 'consume', p: '/kənˈsjuːm/', m: 'v. 消耗' },
+  { w: 'demand', p: '/dɪˈmɑːnd/', m: 'v. 要求' },
+  { w: 'enhance', p: '/ɪnˈhɑːns/', m: 'v. 增强' },
+  { w: 'glance', p: '/ɡlɑːns/', m: 'v. 一瞥' },
+  { w: 'humble', p: '/ˈhʌmbl/', m: 'adj. 谦逊的' },
+  { w: 'impose', p: '/ɪmˈpəʊz/', m: 'v. 强加' },
+  { w: 'kindle', p: '/ˈkɪndl/', m: 'v. 点燃' },
+  { w: 'loyal', p: '/ˈlɔɪəl/', m: 'adj. 忠诚的' },
+  { w: 'navigate', p: '/ˈnævɪɡeɪt/', m: 'v. 导航' },
+  { w: 'occupy', p: '/ˈɒkjupaɪ/', m: 'v. 占据' },
+  { w: 'proceed', p: '/prəˈsiːd/', m: 'v. 继续' },
+  { w: 'quench', p: '/kwentʃ/', m: 'v. 熄灭' },
+  { w: 'reform', p: '/rɪˈfɔːm/', m: 'v. 改革' },
+  { w: 'suspend', p: '/səˈspend/', m: 'v. 暂停' },
+  { w: 'transfer', p: '/trænsˈfɜː/', m: 'v. 转移' },
+  { w: 'unite', p: '/juˈnaɪt/', m: 'v. 联合' },
+  { w: 'whisper', p: '/ˈwɪspə/', m: 'v. 低语' },
+  { w: 'accommodate', p: '/əˈkɒmədeɪt/', m: 'v. 容纳' },
+  { w: 'blossom', p: '/ˈblɒsəm/', m: 'v. 开花' },
+  { w: 'cautious', p: '/ˈkɔːʃəs/', m: 'adj. 谨慎的' },
+  { w: 'disturb', p: '/dɪˈstɜːb/', m: 'v. 打扰' },
+  { w: 'encounter', p: '/ɪnˈkaʊntə/', m: 'v. 遭遇' },
+  { w: 'fascinate', p: '/ˈfæsɪneɪt/', m: 'v. 使着迷' },
+  { w: 'glorify', p: '/ˈɡlɔːrɪfaɪ/', m: 'v. 美化' },
+  { w: 'kindness', p: '/ˈkaɪndnəs/', m: 'n. 善良' },
+  { w: 'liberate', p: '/ˈlɪbəreɪt/', m: 'v. 解放' },
+  { w: 'manage', p: '/ˈmænɪdʒ/', m: 'v. 管理' },
+  { w: 'optimistic', p: '/ˌɒptɪˈmɪstɪk/', m: 'adj. 乐观的' },
+  { w: 'preserve', p: '/prɪˈzɜːv/', m: 'v. 保护' },
+  { w: 'reflect', p: '/rɪˈflekt/', m: 'v. 反映' },
+  { w: 'sustain', p: '/səˈsteɪn/', m: 'v. 维持' },
+  { w: 'tremendous', p: '/trɪˈmendəs/', m: 'adj. 巨大的' },
+  { w: 'visualize', p: '/ˈvɪʒuəlaɪz/', m: 'v. 想象' },
+  { w: 'allocate', p: '/ˈæləkeɪt/', m: 'v. 分配' },
+  { w: 'boost', p: '/buːst/', m: 'v. 促进' },
+  { w: 'compensate', p: '/ˈkɒmpenseɪt/', m: 'v. 补偿' },
+  { w: 'denounce', p: '/dɪˈnaʊns/', m: 'v. 谴责' },
+  { w: 'embed', p: '/ɪmˈbed/', m: 'v. 嵌入' },
+  { w: 'facilitate', p: '/fəˈsɪlɪteɪt/', m: 'v. 促进' },
+  { w: 'hinder', p: '/ˈhɪndə/', m: 'v. 阻碍' },
+  { w: 'jointly', p: '/ˈdʒɔɪntli/', m: 'adv. 共同地' },
+  { w: 'leak', p: '/liːk/', m: 'v. 泄漏' },
+  { w: 'outstanding', p: '/aʊtˈstændɪŋ/', m: 'adj. 杰出的' },
+  { w: 'promote', p: '/prəˈməʊt/', m: 'v. 提升' },
+  { w: 'restore', p: '/rɪˈstɔː/', m: 'v. 恢复' },
+  { w: 'submit', p: '/səbˈmɪt/', m: 'v. 提交' },
+  { w: 'unfold', p: '/ʌnˈfəʊld/', m: 'v. 展开' },
+  { w: 'verify', p: '/ˈverɪfaɪ/', m: 'v. 核实' },
+  { w: 'withdraw', p: '/wɪðˈdrɔː/', m: 'v. 撤回' },
+  { w: 'admire', p: '/ədˈmaɪə/', m: 'v. 钦佩' },
+  { w: 'bewilder', p: '/bɪˈwɪldə/', m: 'v. 使困惑' },
+  { w: 'conceive', p: '/kənˈsiːv/', m: 'v. 构想' },
+  { w: 'depict', p: '/dɪˈpɪkt/', m: 'v. 描绘' },
+  { w: 'exaggerate', p: '/ɪɡˈzædʒəreɪt/', m: 'v. 夸大' },
+  { w: 'fluctuate', p: '/ˈflʌktʃueɪt/', m: 'v. 波动' },
+  { w: 'hesitant', p: '/ˈhezɪtənt/', m: 'adj. 犹豫的' },
+  { w: 'immense', p: '/ɪˈmens/', m: 'adj. 巨大的' },
+  { w: 'jealous', p: '/ˈdʒeləs/', m: 'adj. 嫉妒的' },
+  { w: 'kneel', p: '/niːl/', m: 'v. 跪下' },
+  { w: 'lavish', p: '/ˈlævɪʃ/', m: 'adj. 奢华的' },
+  { w: 'merge', p: '/mɜːdʒ/', m: 'v. 合并' },
+  { w: 'narrate', p: '/nəˈreɪt/', m: 'v. 叙述' },
+  { w: 'obscure', p: '/əbˈskjʊə/', m: 'adj. 模糊的' },
+  { w: 'prolong', p: '/prəˈlɒŋ/', m: 'v. 延长' },
+  { w: 'quiver', p: '/ˈkwɪvə/', m: 'v. 颤抖' },
+  { w: 'reluctant', p: '/rɪˈlʌktənt/', m: 'adj. 不情愿的' },
+  { w: 'scatter', p: '/ˈskætə/', m: 'v. 散播' },
+  { w: 'uphold', p: '/ʌpˈhəʊld/', m: 'v. 维持' },
+  { w: 'void', p: '/vɔɪd/', m: 'adj. 无效的' },
+  { w: 'withhold', p: '/wɪðˈhəʊld/', m: 'v. 扣留' },
+  { w: 'applaud', p: '/əˈplɔːd/', m: 'v. 鼓掌' },
+  { w: 'benevolent', p: '/bəˈnevələnt/', m: 'adj. 仁慈的' },
+  { w: 'comprehend', p: '/ˌkɒmprɪˈhend/', m: 'v. 理解' },
+  { w: 'dedicate', p: '/ˈdedɪkeɪt/', m: 'v. 奉献' },
+  { w: 'eligible', p: '/ˈelɪdʒəbl/', m: 'adj. 合格的' },
+  { w: 'futile', p: '/ˈfjuːtaɪl/', m: 'adj. 无用的' },
+  { w: 'grievance', p: '/ˈɡriːvəns/', m: 'n. 不满' },
+  { w: 'harness', p: '/ˈhɑːnɪs/', m: 'v. 利用' },
+  { w: 'integral', p: '/ˈɪntɪɡrəl/', m: 'adj. 完整的' },
+  { w: 'jeopardize', p: '/ˈdʒepədaɪz/', m: 'v. 危及' },
+  { w: 'knack', p: '/næk/', m: 'n. 诀窍' },
+  { w: 'linger', p: '/ˈlɪŋɡə/', m: 'v. 留恋' },
+  { w: 'mourn', p: '/mɔːn/', m: 'v. 哀悼' },
+  { w: 'nourish', p: '/ˈnʌrɪʃ/', m: 'v. 滋养' },
+  { w: 'obsolete', p: '/ˈɒbsəliːt/', m: 'adj. 过时的' },
+  { w: 'perplex', p: '/pəˈpleks/', m: 'v. 使困惑' },
+  { w: 'quaint', p: '/kweɪnt/', m: 'adj. 古色古香的' },
+  { w: 'refrain', p: '/rɪˈfreɪn/', m: 'v. 克制' },
+  { w: 'sorrow', p: '/ˈsɒrəʊ/', m: 'n. 悲伤' },
+  { w: 'tangible', p: '/ˈtændʒəbl/', m: 'adj. 有形的' },
+  { w: 'unanimous', p: '/juˈnænɪməs/', m: 'adj. 全体一致的' },
+  { w: 'yearn', p: '/jɜːn/', m: 'v. 渴望' },
+  { w: 'accumulate', p: '/əˈkjuːmjəleɪt/', m: 'v. 积累' },
+  { w: 'blunder', p: '/ˈblʌndə/', m: 'n. 错误' },
+  { w: 'cherish', p: '/ˈtʃerɪʃ/', m: 'v. 珍爱' },
+  { w: 'diverge', p: '/daɪˈvɜːdʒ/', m: 'v. 分歧' },
+  { w: 'elude', p: '/ɪˈluːd/', m: 'v. 躲避' },
+  { w: 'foster', p: '/ˈfɒstə/', m: 'v. 培养' },
+  { w: 'gleam', p: '/ɡliːm/', m: 'n. 微光' },
+  { w: 'huddle', p: '/ˈhʌdl/', m: 'v. 挤在一起' },
+  { w: 'ignite', p: '/ɪɡˈnaɪt/', m: 'v. 点燃' },
+  { w: 'jolt', p: '/dʒəʊlt/', m: 'v. 颠簸' },
+  { w: 'knit', p: '/nɪt/', m: 'v. 编织' },
+  { w: 'lament', p: '/ləˈment/', m: 'v. 悲痛' },
+  { w: 'mingle', p: '/ˈmɪŋɡl/', m: 'v. 混合' },
+  { w: 'overwhelm', p: '/ˌəʊvəˈwelm/', m: 'v. 压倒' }
+];
+
+function getEngDateKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+function getEngStats() {
+  try { return JSON.parse(localStorage.getItem(ENG_STATS_KEY) || '{"days":0,"totalWords":0,"lastDate":""}'); } catch(e) { return {days:0,totalWords:0,lastDate:''}; }
+}
+function saveEngStats(s) { localStorage.setItem(ENG_STATS_KEY, JSON.stringify(s)); }
+function getEngFavs() { try { return JSON.parse(localStorage.getItem(ENG_FAV_KEY) || '[]'); } catch(e) { return []; } }
+function saveEngFavs(f) { localStorage.setItem(ENG_FAV_KEY, JSON.stringify(f)); }
+function getEngCache() { try { return JSON.parse(localStorage.getItem(ENG_CACHE_KEY) || 'null'); } catch(e) { return null; } }
+
+function getDayIndex(dateKey) {
+  let h = 0;
+  for (let i = 0; i < dateKey.length; i++) {
+    h = ((h << 5) - h) + dateKey.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+}
+
+function pickTodayWords(dateKey) {
+  const seed = getDayIndex(dateKey);
+  const N = ENG_WORD_BANK.length;
+  const used = [];
+  const taken = new Set();
+  let s = seed;
+  for (let i = 0; i < 20; i++) {
+    let idx;
+    let attempts = 0;
+    do {
+      s = (s * 1103515245 + 12345) & 0x7fffffff;
+      idx = s % N;
+      attempts++;
+    } while (taken.has(idx) && attempts < 50);
+    taken.add(idx);
+    used.push(ENG_WORD_BANK[idx]);
+  }
+  return used;
+}
+
+async function loadEnglish(force) {
+  const container = $('#engContent');
+  if (!container) return;
+  const dateKey = getEngDateKey();
+  updateEngStats();
+  if (!force) {
+    const cache = getEngCache();
+    if (cache && cache.dateKey === dateKey) {
+      renderEnglish(cache.words);
+      return;
+    }
+  }
+  container.innerHTML = '<div class="gold-loading">⏳ 正在准备今日新词...</div>';
+  const words = pickTodayWords(dateKey);
+  const data = { dateKey: dateKey, ts: Date.now(), words: words };
+  localStorage.setItem(ENG_CACHE_KEY, JSON.stringify(data));
+  renderEnglish(words);
+}
+
+function updateEngStats() {
+  const stats = getEngStats();
+  const today = getEngDateKey();
+  if (stats.lastDate !== today) {
+    stats.days += 1;
+    stats.lastDate = today;
+  }
+  const cache = getEngCache();
+  if (cache && cache.words) {
+    const learned = getLearnedToday();
+    stats.totalWords = (stats.days - 1) * 20 + learned.length;
+  } else {
+    stats.totalWords = stats.days * 20;
+  }
+  saveEngStats(stats);
+  $('#engDays').textContent = stats.days;
+  $('#engTotal').textContent = stats.totalWords;
+}
+
+function getLearnedToday() {
+  try {
+    const all = JSON.parse(localStorage.getItem('eng_learned_v1') || '{}');
+    const today = getEngDateKey();
+    return all[today] || [];
+  } catch(e) { return []; }
+}
+function saveLearnedToday(arr) {
+  try {
+    const all = JSON.parse(localStorage.getItem('eng_learned_v1') || '{}');
+    all[getEngDateKey()] = arr;
+    localStorage.setItem('eng_learned_v1', JSON.stringify(all));
+  } catch(e) {}
+}
+
+function renderEnglish(words) {
+  const container = $('#engContent');
+  if (!container) return;
+  const favs = getEngFavs();
+  const learned = getLearnedToday();
+  let html = '';
+  words.forEach(function(w) {
+    const isFav = favs.indexOf(w.w) !== -1;
+    const isLearned = learned.indexOf(w.w) !== -1;
+    html += '<div class="eng-word-item">';
+    html += '<div class="eng-word-info">';
+    html += '<div class="eng-word-name">' + w.w + (isLearned ? ' <span style="font-size:11px;color:#4caf50;">✓已学</span>' : '') + '</div>';
+    html += '<div class="eng-word-phonetic">' + w.p + '</div>';
+    html += '<div class="eng-word-meaning">' + w.m + '</div>';
+    html += '</div>';
+    html += '<div class="eng-word-actions">';
+    html += '<div class="eng-fav ' + (isFav ? 'starred' : '') + '" onclick="toggleEngFav(\'' + w.w + '\', this)">' + (isFav ? '★' : '☆') + '</div>';
+    html += '<div class="eng-btn" onclick="speakEng(\'' + w.w + '\')">🔊 朗读</div>';
+    html += '<div class="eng-btn" onclick="speakEngRepeat(\'' + w.w + '\')">🎤 跟读</div>';
+    html += '</div>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function toggleEngFav(word, btn) {
+  const favs = getEngFavs();
+  const idx = favs.indexOf(word);
+  if (idx === -1) {
+    favs.push(word);
+    btn.classList.add('starred');
+    btn.textContent = '★';
+  } else {
+    favs.splice(idx, 1);
+    btn.classList.remove('starred');
+    btn.textContent = '☆';
+  }
+  saveEngFavs(favs);
+}
+
+function speakEng(word) {
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(word);
+  u.lang = 'en-US';
+  u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+
+function speakEngRepeat(word) {
+  speechSynthesis.cancel();
+  let count = 0;
+  const play = function() {
+    count++;
+    if (count > 2) return;
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = 'en-US';
+    u.rate = 0.7;
+    u.onend = function() { setTimeout(play, 800); };
+    speechSynthesis.speak(u);
+  };
+  play();
+  showToast('🎤 请跟读：' + word);
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;z-index:99999;';
+  document.body.appendChild(t);
+  setTimeout(function() { document.body.removeChild(t); }, 2200);
+}
+
+function markAllLearned() {
+  const cache = getEngCache();
+  if (!cache) return;
+  const learned = getLearnedToday();
+  cache.words.forEach(function(w) {
+    if (learned.indexOf(w.w) === -1) learned.push(w.w);
+  });
+  saveLearnedToday(learned);
+  updateEngStats();
+  renderEnglish(cache.words);
+  showToast('✅ 已标记 ' + learned.length + ' 个为已学');
+}
 
 // ===== 黄金财经 =====
-const GOLD_CACHE_KEY = 'gold_cache_v1';
 const NEWS_CACHE_KEY = 'gold_news_v1';
 
 // 获取缓存的黄金数据
