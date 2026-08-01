@@ -406,6 +406,77 @@
   .gold-loading {
     text-align: center; padding: 40px 20px; color: var(--text-light); font-size: 14px;
   }
+
+  /* 表达能力 */
+  .expr-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: var(--radius); padding: 16px 20px; color: #fff;
+    box-shadow: var(--shadow-card); margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .expr-header-left { display: flex; align-items: center; gap: 10px; }
+  .expr-header-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .expr-header-title { font-size: 14px; font-weight: 700; }
+  .expr-header-sub { font-size: 11px; color: rgba(255,255,255,.75); margin-top: 2px; }
+  .expr-header-badge {
+    background: rgba(255,255,255,.25); padding: 4px 12px; border-radius: 10px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .expr-tabs {
+    display: flex; gap: 0; margin-bottom: 16px;
+    background: var(--bg-soft); padding: 4px; border-radius: 24px;
+  }
+  .expr-tab {
+    flex: 1; padding: 10px 0; text-align: center;
+    border-radius: 20px; font-size: 14px; font-weight: 600;
+    color: var(--text-light); cursor: pointer; transition: all .25s;
+  }
+  .expr-tab.active {
+    background: #fff; color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  .expr-card {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow-card); border: 1px solid var(--border);
+    padding: 18px 20px; margin-bottom: 14px;
+  }
+  .expr-cat {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 4px 12px; border-radius: 12px; margin-bottom: 12px;
+    background: var(--primary-soft); color: var(--primary-dark);
+  }
+  .expr-title {
+    font-size: 18px; font-weight: 700; color: var(--text);
+    margin-bottom: 14px; line-height: 1.5;
+  }
+  .expr-content {
+    background: linear-gradient(135deg, #f0f7ed 0%, #e8f5e9 100%);
+    border-radius: 12px; padding: 14px 16px;
+    font-size: 14px; line-height: 1.9; color: var(--text);
+    white-space: pre-wrap;
+  }
+  .expr-content b { color: var(--primary-dark); font-weight: 700; }
+  .expr-note {
+    margin-top: 12px; padding: 10px 14px;
+    background: #fff8e1; border-left: 3px solid #ffb300;
+    border-radius: 8px; font-size: 13px; color: #5d4037; line-height: 1.7;
+  }
+  .expr-actions {
+    display: flex; gap: 10px; margin-top: 14px;
+  }
+  .expr-action {
+    flex: 1; padding: 10px 0; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--bg-soft);
+    font-size: 13px; font-weight: 600; color: var(--text);
+    cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .expr-action:active { transform: scale(.96); }
+  .expr-action.reading { background: var(--primary); color: #fff; border-color: var(--primary); }
   .fav-card .fav-desc {
     font-size: 12px; color: var(--text-light); line-height: 1.6;
     max-height: 80px; overflow: hidden;
@@ -1281,6 +1352,9 @@
     <div class="nav-item" data-page="gold">
       <div class="nav-icon">📈</div><span>黄金财经</span>
     </div>
+    <div class="nav-item" data-page="expression">
+      <div class="nav-icon">🗣️</div><span>表达能力</span>
+    </div>
   </div>
 
   <div class="nav-section">
@@ -1603,6 +1677,37 @@
     </div>
   </section>
 
+  <!-- 表达能力 -->
+  <section class="page" id="page-expression">
+    <div class="page-header">
+      <div class="page-title-wrap">
+        <h1>🗣️ 表达能力</h1>
+        <p>今日练嘴 · 每天 9:00 更新</p>
+      </div>
+      <button class="gold-refresh-btn" onclick="loadExpression(true)">🔄 换一批</button>
+    </div>
+
+    <div class="expr-header">
+      <div class="expr-header-left">
+        <div class="expr-header-icon">💬</div>
+        <div>
+          <div class="expr-header-title">今日练嘴 · 每日 8:00 更新</div>
+          <div class="expr-header-sub">每天进步一点点</div>
+        </div>
+      </div>
+      <div class="expr-header-badge"><span id="exprProgress">0 / 12</span></div>
+    </div>
+
+    <div class="expr-tabs">
+      <div class="expr-tab active" data-mode="daily" onclick="switchExprMode('daily')">日常</div>
+      <div class="expr-tab" data-mode="work" onclick="switchExprMode('work')">职场</div>
+    </div>
+
+    <div id="exprContent">
+      <div class="gold-loading">⏳ 正在加载内容...</div>
+    </div>
+  </section>
+
   <!-- 收支管理 -->
   <section class="page" id="page-finance">
     <!-- 锁定状态 -->
@@ -1893,8 +1998,8 @@ function switchPage(page) {
   document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
   $('#page-' + page).classList.add('active');
 
-  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页、收支页、菜谱页、黄金页不显示
-  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites' || page === 'finance' || page === 'recipe' || page === 'gold') ? 'none' : 'flex';
+  // FAB 在计划页、旅行页、美食页、个人信息页、收藏页、收支页、菜谱页、黄金页、表达能力页不显示
+  $('#fab').style.display = (page === 'plan' || page === 'travel' || page === 'food' || page === 'profile' || page === 'favorites' || page === 'finance' || page === 'recipe' || page === 'gold' || page === 'expression') ? 'none' : 'flex';
 
   // 收藏页：渲染收藏内容
   if (page === 'favorites') renderFavorites();
@@ -1906,6 +2011,8 @@ function switchPage(page) {
   if (page === 'recipe') renderRecipes();
   // 黄金财经页：加载数据
   if (page === 'gold') loadGoldData(false);
+  // 表达能力页：加载内容
+  if (page === 'expression') loadExpression(false);
 
   // 移动端切换页面后关闭侧边栏
   closeSidebar();
@@ -1914,7 +2021,7 @@ function switchPage(page) {
   const titles = {
     plan: '📋 任务待办', travel: '✈️ 旅行规划', food: '🍜 美食推荐',
     profile: '👤 个人信息', favorites: '⭐ 我的收藏', finance: '💰 收支管理', recipe: '🍳 私厨菜谱',
-    gold: '📈 黄金财经'
+    gold: '📈 黄金财经', expression: '🗣️ 表达能力'
   };
   if ($('#topbarTitle')) $('#topbarTitle').textContent = titles[page] || '我的工作台';
 }
@@ -2990,6 +3097,274 @@ function deleteRecipe(i) {
   arr.splice(i, 1);
   saveRecipes(arr);
   renderRecipes();
+}
+
+// ===== 表达能力 =====
+const EXPR_CACHE_KEY = 'expr_cache_v1';
+const EXPR_READ_KEY = 'expr_read_v1';
+let currentExprMode = 'daily';
+let currentReading = null;
+
+function getExprDateKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+
+// 判断是否需要更新（每日 8:00 之后才算"今日"）
+function getExprBucket() {
+  const now = new Date();
+  const today8am = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0);
+  if (now < today8am) {
+    // 还没到 8 点，算昨天
+    const y = new Date(now);
+    y.setDate(y.getDate() - 1);
+    return y.getFullYear() + '-' + (y.getMonth() + 1) + '-' + y.getDate();
+  }
+  return getExprDateKey();
+}
+
+function getExprCache() {
+  try { return JSON.parse(localStorage.getItem(EXPR_CACHE_KEY) || 'null'); } catch(e) { return null; }
+}
+function getExprReadSet() {
+  try { return JSON.parse(localStorage.getItem(EXPR_READ_KEY) || '{}'); } catch(e) { return {}; }
+}
+function markExprRead(mode, idx) {
+  const reads = getExprReadSet();
+  const key = getExprBucket();
+  if (!reads[key]) reads[key] = {};
+  if (!reads[key][mode]) reads[key][mode] = [];
+  if (reads[key][mode].indexOf(idx) === -1) reads[key][mode].push(idx);
+  localStorage.setItem(EXPR_READ_KEY, JSON.stringify(reads));
+  updateExprProgress(mode);
+}
+
+// 模式切换
+function switchExprMode(mode) {
+  currentExprMode = mode;
+  document.querySelectorAll('.expr-tab').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.mode === mode);
+  });
+  renderExpression(getExprCache(), mode);
+}
+
+// 加载/刷新内容
+async function loadExpression(force) {
+  const container = $('#exprContent');
+  if (!container) return;
+
+  const cache = getExprCache();
+  const todayKey = getExprBucket();
+
+  if (!force && cache && cache.dateKey === todayKey) {
+    renderExpression(cache, currentExprMode);
+    return;
+  }
+
+  container.innerHTML = '<div class="gold-loading">⏳ 正在生成今日表达内容...</div>';
+
+  try {
+    // 生成两个模式的内容（共 12 条）
+    const systemMsg = '你是中文表达力训练师。生成内容要求：1) 包含标题、分类标签、要点内容、记忆点提示 2) 内容贴近生活或工作实用场景 3) 输出严格 JSON，不要任何其他文字';
+    const userPrompt = '请生成中文表达力训练内容，JSON格式：[{"category":"分类","title":"标题","content":"要点内容（使用换行符\\n分隔不同条目）","note":"记忆点提示"}]。请生成日常模式6条（涵盖日常社交、情商聊天、生活应变、情绪沟通等）+ 职场模式6条（涵盖工作汇报、拒绝请求、谈判沟通、会议发言、向上管理等）';
+    const resp = await callDeepSeek(systemMsg, userPrompt, 2500);
+    let parsed = null;
+    try {
+      const m = resp.match(/\[[\s\S]*\]/);
+      parsed = JSON.parse(m ? m[0] : resp);
+    } catch(e) { /* fallthrough */ }
+
+    if (!parsed || !Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('解析失败');
+    }
+
+    const data = {
+      ts: Date.now(),
+      dateKey: todayKey,
+      items: parsed
+    };
+    localStorage.setItem(EXPR_CACHE_KEY, JSON.stringify(data));
+    renderExpression(data, currentExprMode);
+  } catch(err) {
+    console.error('Expression load error:', err);
+    // 兜底：用预置内容
+    const data = {
+      ts: Date.now(),
+      dateKey: todayKey,
+      items: getDefaultExprContent()
+    };
+    if (!force) {
+      localStorage.setItem(EXPR_CACHE_KEY, JSON.stringify(data));
+    }
+    renderExpression(data, currentExprMode);
+  }
+}
+
+// 预置表达内容（DeepSeek 不可用时使用）
+function getDefaultExprContent() {
+  return [
+    // 日常模式 6 条
+    { category: '日常社交', title: '高情商拒绝别人的3种方式', content: '1. 肯定+转折：「这个提议真的很好，不过我这段时间刚好排满了，下次有机会一定参加。」\n2. 缓冲+替代：「我先确认一下日程，不过我可以推荐小王，他在这方面很有经验。」\n3. 共情+边界：「我理解你的难处，但这件事我确实帮不上忙，不好意思。」', note: '记住：拒绝不是得罪人，不表态才是。' },
+    { category: '日常聊天', title: '聊天不冷场的小技巧', content: '1. 用开放式提问代替是非题：把「你喜欢这部电影吗」改成「你最近看了什么好电影」\n2. 主动暴露自己的小信息引导对方分享\n3. 学会接住对方的话再延伸，而不是直接转到别的话题\n4. 偶尔复述对方关键词表示认真在听', note: '好的聊天不是准备话题，而是让对方愿意继续说。' },
+    { category: '情绪沟通', title: '表达不满却不伤关系的句式', content: '1. 「我感觉……」（描述感受，不指责）\n   「你这样做让我感觉被忽视了」\n2. 「我希望……」（表达期望）\n   「我希望你下次能提前告诉我」\n3. 「我们一起想办法……」（合作姿态）\n   「我们一起看看下次怎么避免」', note: 'XYZ 法则：你做了X，我感到Y，希望你做Z。' },
+    { category: '日常社交', title: '夸人不尴尬的3个公式', content: '1. 具体+对比：「你这件衣服比上次那件更衬你的气质」\n2. 观察+感受：「你今天状态很好，整个人都亮了」\n3. 反向+肯定：「一般人做不到，你是怎么坚持的」', note: '不要只说「你真好」，说具体才显真诚。' },
+    { category: '日常应变', title: '被突然提问不会答怎么办', content: '1. 拖延法：「这是个很好的问题，让我先理一下思路」\n2. 拆解法：把大问题拆成几个小点逐一回应\n3. 反问法：「你为什么关心这个？」—— 摸清提问意图再答\n4. 坦诚法：「这块我还在了解，回头给你详细回复」', note: '不会答不丢人，硬答才尴尬。' },
+    { category: '日常聊天', title: '结束对话不尴尬的3种方式', content: '1. 总结+感谢：「听你说完我对这个清楚多了，谢谢！回头有问题再请教你」\n2. 预告+告别：「我先去做饭了，下次接着聊~」\n3. 转移+留下：「对了你上次说的那件事后来怎么样了？我先去忙，回聊」', note: '好的告别 = 让人期待下一次。' },
+
+    // 职场模式 6 条
+    { category: '工作汇报', title: '30秒说清一件事的PREP结构', content: '1. P(Point 观点)：先说结论\n   「这个方案预计能节省 20% 成本」\n2. R(Reason 原因)：再说理由\n   「主要通过优化供应链」\n3. E(Example 例子)：举个实例\n   「参考华东区试点数据」\n4. P(Point 重申)：结尾强调观点\n   「建议本月启动」', note: '领导最关心结论，再问细节。' },
+    { category: '会议发言', title: '会议发言不被忽视的3个技巧', content: '1. 抢第二个发言：第一个容易被反驳，第二个最显眼\n2. 「我补充一点……」：在别人发言后接着说，自然又有立场\n3. 用数据说话：避免「我觉得」，多用「数据显示」「数据表明」', note: '开会不是辩论，是展示专业度。' },
+    { category: '职场沟通', title: '向领导提建议不被驳回的方法', content: '1. 先认同再建议：「您的思路很清晰，我在执行中发现XX情况，想补充一个小建议」\n2. 用选择题代替问答题：「方案 A 节省成本，方案 B 加快进度，您看哪个更合适？」\n3. 带方案提问题：「我遇到一个问题，想了两个方案，您看哪个方向更可行？」', note: '永远不要只抛问题，要带方案。' },
+    { category: '职场沟通', title: '拒绝同事不合理请求的话术', content: '1. 示弱法：「这个我也没做过，怕耽误你」\n2. 排期法：「我手上有三个紧急项目，这个周三前都排满了」\n3. 替代法：「我做不了这部分，但可以帮你问问小张」\n4. 升级法：「这事可能需要领导确认一下，咱们一起请示下？」', note: '拒绝是为了把时间花在真正重要的事上。' },
+    { category: '向上管理', title: '汇报坏消息的正确方式', content: '1. 第一时间说：拖得越久越被动\n2. 先说影响+原因，再说应对方案：\n   「这个项目延期了 3 天，主要是供应商问题，我已经联系了替代方案，预计下周一可以恢复」\n3. 主动给出 Plan B：体现你已经想过应对', note: '领导不怕坏消息，怕的是你无能为力。' },
+    { category: '职场谈判', title: '谈薪资不被压价的3个策略', content: '1. 先说价值再说价格：「我过去一年完成了 XX 项目，为公司节省了 XX 成本」\n2. 用区间代替具体数字：「我希望月薪在 15-18K 之间」\n3. 不要先出价：让对方先给，\n   「贵司对这个岗位的预算是多少？」', note: '谈薪谈的是价值，不是你的生活成本。' }
+  ];
+}
+
+// 渲染内容
+function renderExpression(data, mode) {
+  const container = $('#exprContent');
+  if (!container || !data) return;
+
+  const items = data.items || [];
+  const filtered = mode === 'daily' ? items.slice(0, 6) : items.slice(6, 12);
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="gold-loading">暂无内容</div>';
+    return;
+  }
+
+  const reads = getExprReadSet();
+  const todayKey = getExprBucket();
+  const readSet = (reads[todayKey] && reads[todayKey][mode]) || [];
+
+  let html = '';
+  filtered.forEach(function(item, i) {
+    const isRead = readSet.indexOf(i) !== -1;
+    html += '<div class="expr-card">';
+    html += '<span class="expr-cat">' + (item.category || '') + '</span>';
+    html += '<div class="expr-title">' + (item.title || '') + '</div>';
+    html += '<div class="expr-content">' + (item.content || '').replace(/\n/g, '<br>') + '</div>';
+    if (item.note) html += '<div class="expr-note">💡 ' + item.note + '</div>';
+    html += '<div class="expr-actions">';
+    html += '<div class="expr-action" onclick="readExpr(' + i + ', this)" data-idx="' + i + '">' + (isRead ? '✅ 已读' : '🔊 朗读') + '</div>';
+    html += '<div class="expr-action" onclick="copyExpr(' + i + ')">📋 复制</div>';
+    html += '</div>';
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+  updateExprProgress(mode);
+}
+
+// 更新进度显示
+function updateExprProgress(mode) {
+  const reads = getExprReadSet();
+  const todayKey = getExprBucket();
+  const readArr = (reads[todayKey] && reads[todayKey][mode]) || [];
+  const total = 6;
+  const badge = $('#exprProgress');
+  if (badge) badge.textContent = readArr.length + ' / ' + total;
+}
+
+// 朗读功能（使用浏览器内置 TTS）
+function readExpr(idx, btn) {
+  if (currentReading !== null && btn) {
+    speechSynthesis.cancel();
+    if (currentReading === idx) {
+      currentReading = null;
+      if (btn) btn.classList.remove('reading');
+      document.querySelectorAll('.expr-action[data-idx]').forEach(function(b) {
+        b.classList.remove('reading');
+        b.textContent = '🔊 朗读';
+      });
+      return;
+    }
+  }
+
+  const data = getExprCache();
+  if (!data) return;
+  const items = currentExprMode === 'daily' ? data.items.slice(0, 6) : data.items.slice(6, 12);
+  const item = items[idx];
+  if (!item) return;
+
+  const text = (item.category || '') + '。' + (item.title || '') + '。' + (item.content || '').replace(/\n/g, '。') + (item.note ? '。' + item.note : '');
+
+  // 标记已读
+  markExprRead(currentExprMode, idx);
+  if (btn) {
+    document.querySelectorAll('.expr-action[data-idx]').forEach(function(b) {
+      b.classList.remove('reading');
+      b.textContent = '🔊 朗读';
+    });
+    btn.classList.add('reading');
+    btn.textContent = '⏸ 停止';
+  }
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'zh-CN';
+  utter.rate = 0.95;
+  utter.pitch = 1;
+  utter.onend = function() {
+    if (btn) {
+      btn.classList.remove('reading');
+      btn.textContent = '✅ 已读';
+    }
+    currentReading = null;
+  };
+  utter.onerror = function() {
+    if (btn) {
+      btn.classList.remove('reading');
+      btn.textContent = '🔊 朗读';
+    }
+    currentReading = null;
+  };
+  currentReading = idx;
+  speechSynthesis.speak(utter);
+}
+
+// 复制功能
+function copyExpr(idx) {
+  const data = getExprCache();
+  if (!data) return;
+  const items = currentExprMode === 'daily' ? data.items.slice(0, 6) : data.items.slice(6, 12);
+  const item = items[idx];
+  if (!item) return;
+  const text = '【' + (item.category || '') + '】' + (item.title || '') + '\n\n' + (item.content || '') + (item.note ? '\n\n💡 ' + item.note : '');
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      toastCopy('已复制到剪贴板');
+    }).catch(function() {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    toastCopy('已复制到剪贴板');
+  } catch(e) {
+    toastCopy('复制失败，请手动复制');
+  }
+  document.body.removeChild(ta);
+}
+
+function toastCopy(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.75);color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;z-index:99999;';
+  document.body.appendChild(t);
+  setTimeout(function() { document.body.removeChild(t); }, 1500);
 }
 
 // ===== 黄金财经 =====
