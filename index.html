@@ -3922,7 +3922,8 @@ async function loadGoldData(force) {
     // 主数据源：同源静态 JSON（与 PWA 同一个 GitHub Pages 域名，无跨域问题）
     // 由定时脚本更新 gold-data.json
     const basePath = window.location.pathname.replace(/\/[^/]*$/, '/');
-    let jsonText = await safeFetch(basePath + 'gold-data.json');
+    const nocache = '?_t=' + Date.now();
+    let jsonText = await safeFetch(basePath + 'gold-data.json' + nocache);
 
     let data = null;
     if (jsonText) {
