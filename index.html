@@ -3919,76 +3919,50 @@ async function loadGoldData(force) {
   }
 
   try {
-    // 主数据源：腾讯财经（国内可访问 + CORS 支持）
-    // hf_GC = 国际金价, hf_SI = 国际银价
-    const tencentData = await safeFetch('https://qt.gtimg.cn/q=hf_GC,hf_SI');
+    // 主数据源：jsdelivr CDN 缓存的静态 JSON（国内稳定可访问）
+    // 数据由 GitHub Actions / 手动脚本定时更新
+    const jsonText = await safeFetch('https://cdn.jsdelivr.net/gh/xiehuangbao383-a11y/creator-workspace@main/gold-data.json');
 
-    let goldUsd = 0, silverUsd = 0, updatedAt = new Date().toLocaleString('zh-CN');
-
-    if (tencentData && tencentData.indexOf('v_hf_GC') !== -1) {
-      // 解析腾讯格式: v_hf_GC="4096.38,-1.54,4097.60,..."
-      const goldMatch = tencentData.match(/v_hf_GC="([^"]+)"/);
-      const silverMatch = tencentData.match(/v_hf_SI="([^"]+)"/);
-      if (goldMatch) {
-        const parts = goldMatch[1].split(',');
-        goldUsd = parseFloat(parts[0]);      // 当前价格
-        updatedAt = parts[6] ? parts[6] + ' (纽约)' : updatedAt;
-      }
-      if (silverMatch) {
-        const sParts = silverMatch[1].split(',');
-        silverUsd = parseFloat(sParts[0]);
-      }
-    }
-
-    // 如果腾讯失败，尝试备用源：gold-api.com
-    if (!goldUsd) {
-      console.warn('腾讯接口失败，尝试 gold-api.com');
-      const goldJson = await safeFetch('https://api.gold-api.com/price/XAU');
-      if (goldJson) {
-        try {
-          const g = JSON.parse(goldJson);
-          goldUsd = g.price;
-          updatedAt = g.updatedAtReadable || updatedAt;
-        } catch(e) {}
-      }
-    }
-    if (!silverUsd) {
-      const silverJson = await safeFetch('https://api.gold-api.com/price/XAG');
-      if (silverJson) {
-        try { silverUsd = JSON.parse(silverJson).price; } catch(e) {}
-      }
-    }
-
-    // 汇率：jsdelivr CDN（国内可访问）
-    let usdCny = 7.2;  // 默认值
-    const fxFetch = await safeFetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
-    if (fxFetch) {
+    let data = null;
+    if (jsonText) {
       try {
-        const fxObj = JSON.parse(fxFetch);
-        if (fxObj.usd && fxObj.usd.cny) usdCny = fxObj.usd.cny;
-      } catch(e) {}
+        data = JSON.parse(jsonText);
+      } catch(e) {
+        console.warn('JSON parse failed:', e);
+      }
     }
 
-    if (!goldUsd) {
-      throw new Error('所有金价数据源均失败');
+    // 备用源：腾讯接口（可能在国内 PWA 中失败）
+    if (!data) {
+      console.warn('jsdelivr JSON 失败，尝试腾讯接口');
+      const tencentData = await safeFetch('https://qt.gtimg.cn/q=hf_GC,hf_SI');
+      if (tencentData && tencentData.indexOf('v_hf_GC') !== -1) {
+        const goldMatch = tencentData.match(/v_hf_GC="([^"]+)"/);
+        const silverMatch = tencentData.match(/v_hf_SI="([^"]+)"/);
+        if (goldMatch) {
+          const gParts = goldMatch[1].split(',');
+          const sParts = silverMatch ? silverMatch[1].split(',') : ['30'];
+          const usdCny = 7.0;  // 兜底汇率
+          const GRAM = 31.1035;
+          const goldUsd = parseFloat(gParts[0]);
+          const silverUsd = parseFloat(sParts[0]);
+          data = {
+            ts: Date.now(),
+            goldUsd: goldUsd,
+            silverUsd: silverUsd,
+            usdCny: usdCny,
+            goldCnyPerGram: (goldUsd * usdCny) / GRAM,
+            brandGold: (goldUsd * usdCny) / GRAM + 30,
+            recycleGold: (goldUsd * usdCny) / GRAM - 3,
+            updatedAt: gParts[6] || new Date().toLocaleString('zh-CN')
+          };
+        }
+      }
     }
 
-    // 换算：1 盎司 = 31.1035 克
-    const gramPerOz = 31.1035;
-    const goldCnyPerGram = (goldUsd * usdCny) / gramPerOz;
-    const brandGold = goldCnyPerGram + 30;     // 品牌金溢价
-    const recycleGold = goldCnyPerGram - 3;     // 回收金折扣
-
-    const data = {
-      ts: now,
-      goldUsd: goldUsd,
-      silverUsd: silverUsd || 30,
-      usdCny: usdCny,
-      goldCnyPerGram: goldCnyPerGram,
-      brandGold: brandGold,
-      recycleGold: recycleGold,
-      updatedAt: updatedAt
-    };
+    if (!data || !data.goldUsd) {
+      throw new Error('所有数据源均失败');
+    }
 
     localStorage.setItem(GOLD_CACHE_KEY, JSON.stringify(data));
 
@@ -4000,7 +3974,7 @@ async function loadGoldData(force) {
       renderGoldPage(data, news);
     }).catch(function() {
       const fallbackNews = {
-        ts: now,
+        ts: Date.now(),
         news: getDefaultNews()
       };
       renderGoldPage(data, fallbackNews);
@@ -4014,7 +3988,7 @@ async function loadGoldData(force) {
     } else {
       // 没有任何缓存，使用硬编码降级数据
       const fallback = {
-        ts: now,
+        ts: Date.now(),
         goldUsd: 2400,
         silverUsd: 28,
         usdCny: 7.2,
@@ -4024,7 +3998,7 @@ async function loadGoldData(force) {
         updatedAt: new Date().toLocaleString('zh-CN') + '（参考价格）'
       };
       const fallbackNews = {
-        ts: now,
+        ts: Date.now(),
         news: getDefaultNews()
       };
       renderGoldPage(fallback, fallbackNews);
