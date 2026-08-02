@@ -3903,16 +3903,35 @@ async function loadGoldData(force) {
 
   container.innerHTML = '<div class="gold-loading">⏳ 正在获取最新金价...</div>';
 
+  // 单独 fetch，失败不影响其他
+  async function safeFetch(url) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(function() { ctrl.abort(); }, 10000);
+      const resp = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return await resp.json();
+    } catch(e) {
+      console.warn('Fetch failed:', url, e.message);
+      return null;
+    }
+  }
+
   try {
-    // 并行请求：国际金价、银价、USD->CNY汇率
+    // 并行请求：国际金价、银价、USD->CNY汇率（任一失败不阻断）
     const [goldRes, silverRes, fxRes] = await Promise.all([
-      fetch('https://api.gold-api.com/price/XAU').then(r => r.json()),
-      fetch('https://api.gold-api.com/price/XAG').then(r => r.json()),
-      fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json').then(r => r.json())
+      safeFetch('https://api.gold-api.com/price/XAU'),
+      safeFetch('https://api.gold-api.com/price/XAG'),
+      safeFetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json')
     ]);
 
+    if (!goldRes || !fxRes) {
+      throw new Error('关键数据缺失（gold=' + !!goldRes + ', fx=' + !!fxRes + '）');
+    }
+
     const goldUsd = goldRes.price;        // 美元/盎司
-    const silverUsd = silverRes.price;     // 美元/盎司
+    const silverUsd = silverRes ? silverRes.price : 30;     // 美元/盎司
     const usdCny = fxRes.usd.cny;          // 1 USD = x CNY
 
     // 换算
